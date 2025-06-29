@@ -1,5 +1,3 @@
-/// <reference path="./types/globals.d.ts" />
-
 import {
   dateFormat,
   getAjaxJson,

@@ -1,5 +1,3 @@
-// @js:
-
 import { getAjaxJson, sleepToast, urlUserDetailed } from "./base.jsLib";
 
 interface BookSourceSettings {
@@ -9,6 +7,7 @@ interface BookSourceSettings {
   SHOW_GENERAL_GENRE: boolean;
 }
 
+// @js:
 // 读取设置
 let settings: BookSourceSettings = {
   SHOW_GENERAL_NEW: false,

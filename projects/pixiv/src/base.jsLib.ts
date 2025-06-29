@@ -1,5 +1,3 @@
-/// <reference path="./types/globals.d.ts" />
-
 export const cacheSaveSeconds = 7 * 24 * 60 * 60; // 缓存时间7天
 
 export function cacheGetAndSet<T>(cache: CacheManager, key: string, supplyFunc: () => T): T {

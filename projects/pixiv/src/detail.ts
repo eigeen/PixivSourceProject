@@ -1,5 +1,3 @@
-/// <reference path="./types/globals.d.ts" />
-
 // @js:
 import { urlNovelDetailed, urlNovelUrl, urlSeriesDetailed, urlSeriesUrl } from "./base.jsLib";
 import { getUtil } from "./common";

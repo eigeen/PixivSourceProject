@@ -1,0 +1,14 @@
+{
+  "name": "@reader-source/common",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "types": "src/types/globals.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.6.3"
+}

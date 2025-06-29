@@ -1,5 +1,3 @@
-/// <reference path="./types/globals.d.ts" />
-
 import { type Settings, SETTINGS_NAME } from "./settings";
 import {
   getAjaxJson,
