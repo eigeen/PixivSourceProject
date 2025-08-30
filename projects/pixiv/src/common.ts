@@ -1,3 +1,7 @@
+/**
+ * common.ts: 公共函数，由其他脚本通过import导入
+ */
+
 import type { Util } from "./types/Util";
 
 export function getUtil(): Util {

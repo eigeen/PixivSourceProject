@@ -37,7 +37,7 @@ export default INPUT_FILES.map((input) => ({
     format: "esm",
     sourcemap: true,
   },
-  // 将其他输入文件标记为外部依赖，防止打包
+  // 将jsLib标记为外部依赖，防止内联打包
   external: ["./base.jsLib"],
   plugins: [typescript(), removeImportExports()],
 }));
