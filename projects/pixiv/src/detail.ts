@@ -5,7 +5,7 @@ import { getUtil } from "./common";
 const util = getUtil();
 
 function novelHandler(novel: any) {
-  novel = util.formatNovels(util.handNovels([novel], true))[0];
+  novel = util.formatNovels(util.handNovels([novel]))[0];
   if (novel.seriesId === undefined || novel.seriesId === null) {
     book.bookUrl = novel.detailedUrl = urlNovelUrl(novel.id);
     book.tocUrl = novel.catalogUrl = urlNovelDetailed(novel.id);

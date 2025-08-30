@@ -1,8 +1,12 @@
 import {
   dateFormat,
   getAjaxJson,
+  getFromCache,
+  getWebViewUA,
   isHtmlString,
   isJsonString,
+  isLogin,
+  putInCache,
   sleepToast,
   timeFormat,
   urlCoverUrl,
@@ -27,7 +31,7 @@ function isBackupSource() {
 // 可用 java.ajax() 不可用 java.webview() java.ajaxAll()
 // 可用 java.getCookie() cache.put() cache.get() 默认值为 undefined
 // 可用 java.startBrowser() 不可用 java.startBrowserAwaitAwait
-// 可用 source.bookSourceName source.getVariable() 等
+// 可用 source.bookSourceName source.getVariable() source.setVariable()等
 // java.getUserAgent() java.getWebViewUA() 目前返回内容相同
 // 不能读写源变量
 function isSourceRead() {
@@ -40,12 +44,12 @@ function sleepToastWithDefault(msg: string, duration: number = 0) {
   sleepToast(msg, duration);
 }
 
-/** TODO: 此方法疑似已经无用，暂时保留 */
-function checkMessageThread(checkTimes?: number | null) {
+// 检测过度访问
+function checkMessageThread(checkTimes?: number) {
   if (checkTimes === undefined) {
     checkTimes = Number(cache.get("checkTimes"));
   }
-  if (checkTimes === 0 && util.isLogin()) {
+  if (checkTimes === 0 && isLogin()) {
     let latestMsg = getAjaxJson(urlMessageThreadLatest(5));
     if (latestMsg.error === true) {
       java.log(JSON.stringify(latestMsg));
@@ -53,21 +57,18 @@ function checkMessageThread(checkTimes?: number | null) {
       let msg = latestMsg.body.message_threads.filter(
         (item: any) => item.thread_name === "pixiv事務局"
       )[0];
-      if (
-        msg !== undefined &&
-        new Date().getTime() - 1000 * msg.modified_at <= 3 * 24 * 60 * 60 * 1000
-      ) {
+      if (msg && new Date().getTime() - 1000 * msg.modified_at <= 3 * 24 * 60 * 60 * 1000) {
         // 3天内进行提示
-        sleepToastWithDefault(
+        sleepToast(
           `您于 ${timeFormat(1000 * msg.modified_at)} 触发 Pixiv 【过度访问】，请修改密码并重新登录。\n如已修改请忽略`,
           3
         );
-        sleepToastWithDefault(`${msg.latest_content}`, 5);
+        sleepToast(`${msg.latest_content}`, 5);
         java.startBrowser("https://accounts.pixiv.net/password/change", "修改密码");
       }
     }
   }
-  cache.put("checkTimes", (checkTimes ?? 0) + 1, 4 * 60 * 60); // 缓存4h，每4h提醒一次
+  cache.put("checkTimes", checkTimes + 1, 4 * 60 * 60); // 缓存4h，每4h提醒一次
   // cache.put("checkTimes", checkTimes + 1, 60)  // 测试用，缓存60s，每分钟提醒一次
   // java.log(checkTimes + 1)
 }
@@ -80,21 +81,6 @@ function getPixivUid() {
   } else {
     cache.delete("pixiv:uid");
   }
-}
-
-export function getWebViewUA() {
-  let userAgent = cache.get("userAgent");
-  if (userAgent === undefined || userAgent === null) {
-    if (isSourceRead()) {
-      userAgent =
-        "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36";
-    } else {
-      userAgent = String(java.getUserAgent());
-    }
-    java.log(userAgent);
-    cache.put("userAgent", userAgent);
-  }
-  return String(userAgent);
 }
 
 function getHeaders() {
@@ -116,7 +102,7 @@ function getHeaders() {
     "x-csrf-token": cache.get("csrfToken"),
     Cookie: cache.get("pixivCookie"),
   };
-  cache.put("headers", JSON.stringify(headers));
+  putInCache("headers", headers);
   return headers;
 }
 
@@ -134,17 +120,17 @@ function getBlockAuthorsFromSource() {
 }
 
 function syncBlockAuthorList() {
-  let authors1 = JSON.parse(cache.get("blockAuthorList") || "[]");
+  let authors1 = getFromCache("blockAuthorList");
   let authors2 = getBlockAuthorsFromSource();
   util.debugFunc(() => {
     java.log(`屏蔽作者：缓存　：${JSON.stringify(authors1)}`);
     java.log(`屏蔽作者：源变量：${JSON.stringify(authors2)}`);
   });
-  cache.put("blockAuthorList", JSON.stringify(authors2));
-  if (authors1 === undefined || authors1 === null || authors1.length !== authors2.length) {
-    java.log("屏蔽作者：已将源变量同步至缓存");
+  putInCache("blockAuthorList", authors2);
+  if (authors1 === null || authors1.length !== authors2.length) {
+    java.log("🚫 屏蔽作者：已将源变量同步至缓存");
   } else if (authors2.length === 0) {
-    java.log("屏蔽作者：已清空屏蔽作者");
+    java.log("🚫 屏蔽作者：已清空屏蔽作者");
   }
 }
 
@@ -173,7 +159,7 @@ function ConstructUtil(): Util {
     settings = JSON.parse(String(source.variableComment).match(RegExp(/{([\s\S]*?)}/gm)));
   } else {
     // cache.delete("pixivSettings")
-    settings = JSON.parse(cache.get("pixivSettings") || "{}");
+    settings = getFromCache("pixivSettings");
   }
   if (settings !== null) {
     java.log("⚙️ 使用自定义设置");
@@ -204,29 +190,30 @@ function ConstructUtil(): Util {
     settings.SHOW_UPDATE_TIME = false; // 目录：显示章节更新时间
     settings.SHOW_ORIGINAL_LINK = false; // 目录：显示章节源链接
     settings.SHOW_COMMENTS = false; // 正文：显示评论
+  } else {
+    settings.SEARCH_AUTHOR = true; // 搜索：默认搜索作者名称
   }
   settings.IS_LEGADO = !isSourceRead();
   settings.IS_SOURCE_READ = isSourceRead();
   settings.IS_BACKUP_SOURCE = isBackupSource();
 
+  putInCache("pixivSettings", settings); // 设置写入缓存
+
   const _t: Util = {
-    settings: settings,
+    settings: settings, // 设置加入对象
   } as Util;
 
   _t.debugFunc = (func: () => void) => {
-    if (util.settings.DEBUG) {
+    if (util.settings.DEBUG === true) {
       func();
     }
   };
 
-  _t.isLogin = (): boolean => {
-    let cookie = String(java.getCookie("https://www.pixiv.net/", null));
-    return cookie.includes("first_visit_datetime");
-  };
-
   _t.checkStatus = (status: boolean): string => {
     if (status) return "✅ 已";
-    else return "❌ 未";
+    else if (status === false) return "❌ 未";
+    else if (status === undefined) return "🈚️ 无数据：";
+    else return "❌ 数据有误";
   };
 
   _t.login = () => {
@@ -286,20 +273,18 @@ function ConstructUtil(): Util {
    * https://greasyfork.org/zh-CN/scripts/30766-pixiv-previewer/code
    */
   _t.getCsrfToken = (): string | null => {
-    let csrfToken;
-    let html = java.webView(null, "https://www.pixiv.net/", null);
-    if (!html) {
-      sleepToastWithDefault("无法获取网页内容(csrfToken)");
-      return null;
+    let csrfToken = cache.get("csrfToken");
+    if (!csrfToken || csrfToken === "null") {
+      let html = java.webView(null, "https://www.pixiv.net/", null);
+      try {
+        csrfToken = html!.match(/token\\":\\"([a-z0-9]{32})/)![1];
+      } catch (e) {
+        csrfToken = null;
+        sleepToastWithDefault("未登录账号(csrfToken)");
+      }
+      java.log(typeof csrfToken);
+      java.log(csrfToken);
     }
-
-    csrfToken = html.match(/token\\":\\"([a-z0-9]{32})/)?.[1] || null;
-    if (!csrfToken) {
-      sleepToastWithDefault("未登录账号(csrfToken)");
-    }
-
-    java.log(typeof csrfToken);
-    java.log(csrfToken);
     cache.put("csrfToken", csrfToken); // 与登录设备有关
     return csrfToken;
   };
@@ -333,27 +318,10 @@ function ConstructUtil(): Util {
    * @returns 屏蔽作者后的小说列表
    */
   _t.authorFilter = (novels: any[]): any[] => {
-    let authors = [];
-    if (util.settings.IS_LEGADO) {
-      authors = JSON.parse(cache.get("blockAuthorList") || "[]");
-    } else if (util.settings.IS_SOURCE_READ) {
-      // authors = cache.get("blockAuthorList")  // 源阅无数据返回 undefined
-      // try {
-      //     if (typeof authors !== "undefined") {
-      //         authors = JSON.parse(authors)
-      //         java.log(authors)
-      //         java.log(typeof authors)
-      //     } else authors = null
-      // } catch (e) {
-      //     authors = []
-      //     java.log("屏蔽作者 JSON Parse Error")
-      //     java.log(e)
-      // }
-    }
-
-    if (authors && authors.length >= 0) {
+    let authors: any[] = getFromCache("blockAuthorList");
+    if (authors !== null && authors.length >= 0) {
       java.log(`🚫 屏蔽作者ID：${JSON.stringify(authors)}`);
-      authors.forEach((author: string | number) => {
+      authors.forEach((author) => {
         novels = novels.filter((novel) => novel.userId !== String(author));
       });
     }
@@ -361,33 +329,35 @@ function ConstructUtil(): Util {
   };
 
   _t.novelFilter = (novels: any[]): any[] => {
-    let likeNovels = [],
-      watchedSeries = [];
-    let novels0 = [],
-      novels1 = [],
-      novels2 = [];
-    if (util.settings.IS_LEGADO) {
-      likeNovels = JSON.parse(cache.get("likeNovels") || "[]");
-      watchedSeries = JSON.parse(cache.get("watchedSeries") || "[]");
-    }
-    novels0 = novels.map((novel) => novel.id);
+    let novels1 = [];
+    let novels2 = [];
+    let likeNovels = getFromCache("likeNovels");
+    let watchedSeries = getFromCache("watchedSeries");
+    let novels0 = novels.map((novel) => novel.id);
 
     let msg = util.checkStatus(util.settings.SHOW_LIKE_NOVELS).replace("未", "不");
     java.log(`${msg}显示收藏小说`);
-    if (!util.settings.SHOW_LIKE_NOVELS) {
+    if (util.settings.SHOW_LIKE_NOVELS === false) {
       novels = novels.filter((novel) => !likeNovels.includes(Number(novel.id)));
       novels1 = novels.map((novel) => novel.id);
+      java.log(`⏬ 过滤收藏：过滤前${novels0.length}；过滤后${novels1.length}`);
     }
 
     msg = util.checkStatus(util.settings.SHOW_WATCHED_SERIES).replace("未", "不");
     java.log(`${msg}显示追更系列`);
-    if (!util.settings.SHOW_WATCHED_SERIES) {
+    if (util.settings.SHOW_WATCHED_SERIES === false) {
       novels = novels.filter((novel) => !watchedSeries.includes(Number(novel.seriesId)));
       novels2 = novels.map((novel) => novel.id);
+      if (novels1.length >= 1) novels0 = novels1;
+      java.log(`⏬ 过滤追更：过滤前${novels0.length}；过滤后${novels2.length}`);
     }
 
-    if (!(util.settings.SHOW_LIKE_NOVELS && util.settings.SHOW_WATCHED_SERIES === true)) {
-      java.log(`⏬ 过滤收藏/追更：过滤前${novels0.length}；过滤后${novels2.length}`);
+    let novels3 = novels.map((novel) => novel.id);
+    if (novels0.length >= 1 && novels3.length === 0) {
+      let msg = `⏬ 过滤小说\n⚠️ 过滤后无结果\n\n请根据需要\n`;
+      if (util.settings.SHOW_LIKE_NOVELS === false) msg += "开启显示收藏小说\n";
+      if (util.settings.SHOW_WATCHED_SERIES === false) msg += "开启显示追更系列";
+      sleepToast(msg, 1);
     }
     util.debugFunc(() => {
       // java.log(JSON.stringify(novels0))
@@ -401,13 +371,57 @@ function ConstructUtil(): Util {
   };
 
   /**
+   * 过滤描述与标签（屏蔽标签/屏蔽描述）
+   * @param novels 小说列表
+   * @returns 过滤后的小说列表
+   */
+  _t.novelFilter2 = (novels: any[]) => {
+    let novels0 = novels.map((novel) => novel.id);
+    let captionBlockWords = getFromCache("captionBlockWords");
+    if (captionBlockWords === null) captionBlockWords = [];
+    if (captionBlockWords) {
+      // 仅保留没有任何屏蔽词的小说
+      // novels = novels.filter(novel => {
+      //     return !captionBlockWords.some(item => {
+      //         if (novel.description !== undefined) return novel.description.includes(item)
+      //     })
+      // })
+      novels = novels.filter(
+        (novel) => !captionBlockWords.some((item: any) => novel.description.includes(item))
+      );
+      let novels2 = novels.map((novel) => novel.id);
+      java.log(`🚫 屏蔽描述：${captionBlockWords.join("\n")}`);
+      java.log(`🚫 屏蔽描述：过滤前${novels0.length}；过滤后${novels2.length}`);
+    }
+
+    let tagsBlockWords = getFromCache("tagsBlockWords");
+    if (tagsBlockWords === null) tagsBlockWords = [];
+    if (tagsBlockWords) {
+      // 仅保留没有任何屏蔽词的小说
+      // novels = novels.filter(novel => {
+      //     return !tagsBlockWords.some(item => {
+      //         if (novel.tags !== undefined) return novel.tags.includes(item)
+      //     })
+      // })
+      novels = novels.filter(
+        (novel) => !tagsBlockWords.some((item: any) => novel.tags.includes(item))
+      );
+      let novels2 = novels.map((novel) => novel.id);
+      java.log(`🚫 屏蔽标签：${tagsBlockWords.join("、")}`);
+      java.log(`🚫 屏蔽标签：过滤前${novels0.length}；过滤后${novels2.length}`);
+    }
+    return novels;
+  };
+
+  /**
    * 收藏小说/追更系列 写入缓存
    * @param listInCacheName 缓存名称
    * @param list 列表
    */
   _t.saveNovels = (listInCacheName: string, list: any[]) => {
-    let listInCache = JSON.parse(cache.get(listInCacheName) || "[]");
-    if (listInCache === undefined || listInCache === null) listInCache = [];
+    let listInCache = getFromCache(listInCacheName);
+    if (listInCache === null) listInCache = [];
+
     listInCache = listInCache.concat(list);
     listInCache = Array.from(new Set(listInCache));
     cache.put(listInCacheName, JSON.stringify(listInCache));
@@ -419,9 +433,8 @@ function ConstructUtil(): Util {
   /**
    * 处理 novels 列表
    * @param novels 小说列表
-   * @param detailed 是否详细
    */
-  _t.handNovels = (novels: any[], detailed = false) => {
+  _t.handNovels = (novels: any[]) => {
     const likeNovels: any[] = [];
     const watchedSeries: any[] = [];
     novels = util.authorFilter(novels);
@@ -435,7 +448,7 @@ function ConstructUtil(): Util {
       if (novel.tags === undefined || novel.tags === null) {
         novel.tags = [];
       }
-      // 默认搜索
+      // 搜索单篇
       if (novel.isOneshot === undefined) {
         // novel.seriesId = novel.seriesId
         // novel.seriesTitle = novel.seriesTitle
@@ -444,13 +457,10 @@ function ConstructUtil(): Util {
         novel.coverUrl = novel.url;
         // novel.createDate = novel.createDate
         // novel.updateDate = novel.updateDate
-        novel.isBookmark = novel.bookmarkData !== undefined && novel.bookmarkData !== null;
-        if (novel.isBookmark === true) {
-          cache.put(`collect${novel.id}`, novel.bookmarkData.id);
-          likeNovels.push(Number(novel.id));
-        }
-      } else {
-        // 搜索系列
+      }
+
+      // 搜索系列
+      if (novel.isOneshot !== undefined) {
         if (novel.isOneshot === true) {
           novel.seriesId = undefined;
           novel.id = novel.novelId; // 获取真正的 novelId
@@ -468,8 +478,8 @@ function ConstructUtil(): Util {
         novel.updateDate = novel.updateDateTime;
       }
 
-      // 正文详情页
-      if (novel.content !== undefined) {
+      // 单篇正文详情页
+      if (novel.content) {
         novel.novelId = novel.id;
         novel.tags = novel.tags.tags.map((item: any) => item.tag);
         novel.textCount = novel.userNovels[`${novel.id}`].textCount;
@@ -478,18 +488,15 @@ function ConstructUtil(): Util {
         novel.coverUrl = novel.userNovels[`${novel.id}`].url;
         // novel.createDate = novel.createDate
         novel.updateDate = novel.uploadDate;
-        novel.isBookmark = novel.bookmarkData !== undefined && novel.bookmarkData !== null;
-        if (novel.isBookmark === true) {
-          cache.put(`collect${novel.id}`, novel.bookmarkData.id);
-          likeNovels.push(Number(novel.id));
-        }
-        if (novel.seriesNavData !== undefined && novel.seriesNavData !== null) {
+
+        if (novel.seriesNavData) {
           novel.seriesId = novel.seriesNavData.seriesId;
           novel.seriesTitle = novel.seriesNavData.title;
         }
       }
+
       // 系列详情
-      if (novel.firstNovelId !== undefined) {
+      if (novel.firstNovelId) {
         novel.seriesId = novel.id;
         novel.id = novel.novelId = novel.firstNovelId;
         novel.seriesTitle = novel.title;
@@ -497,28 +504,22 @@ function ConstructUtil(): Util {
         // novel.isWatched = novel.isWatched  // 搜索系列可获取
       }
 
-      if (novel.seriesId === undefined || novel.seriesId === null) {
-        // 单篇
+      // 单篇加更多信息
+      if (!novel.seriesId) {
         novel.tags.unshift("单本");
         novel.latestChapter = novel.title;
         novel.detailedUrl = urlNovelDetailed(novel.id);
         novel.total = 1;
-      }
-      if (novel.seriesId !== undefined && detailed === false) {
-        novel.id = novel.seriesId;
-        novel.firstNovelId = novel.novelId;
-        novel.title = novel.seriesTitle;
-        novel.tags.unshift("长篇");
-        novel.detailedUrl = urlSeriesDetailed(novel.seriesId);
-        // novel.seriesNavData = {}
-        // novel.seriesNavData.seriesId = novel.seriesId
-        // novel.seriesNavData.title = novel.seriesTitle
-        if (novel.isWatched === true) {
-          watchedSeries.push(Number(novel.seriesId));
+        if (novel.bookmarkData) {
+          novel.isBookmark = true;
+          cache.put(`collect${novel.id}`, novel.bookmarkData.id);
+          likeNovels.push(Number(novel.id));
+        } else {
+          novel.isBookmark = false;
         }
       }
-
-      if (novel.seriesId !== undefined && detailed === true) {
+      // 系列添加更多信息
+      if (novel.seriesId) {
         let series = getAjaxJson(urlSeriesDetailed(novel.seriesId)).body;
         novel.id = series.firstNovelId;
         novel.title = series.title;
@@ -527,6 +528,7 @@ function ConstructUtil(): Util {
         novel.textCount = series.publishedTotalCharacterCount;
         novel.description = series.caption;
         novel.coverUrl = series.cover.urls["480mw"];
+        novel.detailedUrl = urlSeriesDetailed(novel.seriesId);
         novel.createDate = series.createDate;
         novel.updateDate = series.updateDate;
         novel.total = series.publishedContentCount;
@@ -536,13 +538,12 @@ function ConstructUtil(): Util {
         }
 
         // 发送请求获取第一章 获取标签与简介
-        let firstNovel = {} as any;
+        let firstNovel: any = {};
         try {
           firstNovel = getAjaxJson(urlNovelDetailed(series.firstNovelId)).body;
           novel.tags = novel.tags.concat(firstNovel.tags.tags.map((item: any) => item.tag));
-          firstNovel.isBookmark =
-            firstNovel.bookmarkData !== undefined && firstNovel.bookmarkData !== null;
-          if (firstNovel.isBookmark === true) {
+          if (firstNovel.bookmarkData) {
+            firstNovel.isBookmark = true;
             cache.put(`collect${firstNovel.id}`, firstNovel.bookmarkData.id);
             likeNovels.push(Number(firstNovel.id));
           }
@@ -577,7 +578,7 @@ function ConstructUtil(): Util {
   _t.formatNovels = (novels: any[]): any[] => {
     novels = util.novelFilter(novels);
     novels.forEach((novel) => {
-      novel.title = novel.title.replace(RegExp(/^\s+|\s+$/g), "");
+      if (novel.title) novel.title = novel.title.replace(RegExp(/^\s+|\s+$/g), "");
       novel.coverUrl = urlCoverUrl(novel.coverUrl);
       novel.readingTime = `${novel.readingTime / 60} 分钟`;
       novel.createDate = dateFormat(novel.createDate);
@@ -596,23 +597,24 @@ function ConstructUtil(): Util {
       novel.tags = Array.from(new Set(novel.tags2));
       novel.tags = novel.tags.join(",");
       let collectMsg = "";
-      if (novel.seriesId !== undefined) {
+      if (novel.seriesId) {
         collectMsg = `📃 追更：${util.checkStatus(novel.isWatched)}追更系列`;
       } else {
         collectMsg = `❤️ 收藏：${util.checkStatus(novel.isBookmark)}加入收藏`;
       }
 
       if (util.settings.MORE_INFORMATION) {
-        novel.description = `\n🅿️ 登录：${util.checkStatus(util.isLogin())}登录账号
+        novel.description = `\n🅿️ 登录：${util.checkStatus(isLogin())}登录账号
                 ${collectMsg}\n📖 书名：${novel.title}\n👤 作者：${novel.userName}
                 #️ 标签：${novel.tags}\n⬆️ 上传：${novel.createDate}
                 🔄 更新：${novel.updateDate}\n📄 简介：${novel.description}`;
       } else {
-        novel.description = `\n🅿️ 登录：${util.checkStatus(util.isLogin())}登录账号
+        novel.description = `\n🅿️ 登录：${util.checkStatus(isLogin())}登录账号
                 ${collectMsg}\n⬆️ 上传：${novel.createDate}\n🔄 更新：${novel.updateDate}
                 📄 简介：${novel.description}`;
       }
     });
+    novels = util.novelFilter2(novels);
     return novels;
   };
 
@@ -690,11 +692,7 @@ function ConstructUtil(): Util {
       res = JSON.parse(result);
     }
 
-    if (
-      res.body !== undefined &&
-      res.body.seriesNavData !== undefined &&
-      res.body.seriesNavData !== null
-    ) {
+    if (res.body && res.body.seriesNavData) {
       seriesId = res.body.seriesNavData.seriesId;
     }
     if (seriesId) {
@@ -718,12 +716,10 @@ const u = ConstructUtil();
 util = u;
 java.put("util", objStringify(util));
 
-if (util.settings.IS_LEGADO) {
-  syncBlockAuthorList();
-}
+syncBlockAuthorList();
 
 if (result.code() === 200) {
-  if (isBackupSource() && !util.isLogin) {
+  if (isBackupSource() && !isLogin()) {
     util.getCsrfToken();
   }
   getPixivUid();

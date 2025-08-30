@@ -15,12 +15,6 @@ export interface Util {
   debugFunc(func: () => void): void;
 
   /**
-   * 检查是否已登录
-   * @returns 是否已登录
-   */
-  isLogin(): boolean;
-
-  /**
    * 检查状态并返回对应的状态文本
    * @param status 状态值
    * @returns 状态文本
@@ -76,6 +70,13 @@ export interface Util {
   novelFilter(novels: any[]): any[];
 
   /**
+   * 过滤描述与标签（屏蔽标签/屏蔽描述）
+   * @param novels 小说列表
+   * @returns 过滤后的小说列表
+   */
+  novelFilter2(novels: any[]): any[];
+
+  /**
    * 收藏小说/追更系列 写入缓存
    * @param listInCacheName 缓存名称
    * @param list 列表
@@ -85,10 +86,9 @@ export interface Util {
   /**
    * 处理 novels 列表
    * @param novels 小说列表
-   * @param detailed 是否详细
    * @returns 处理后的 novels 列表
    */
-  handNovels(novels: any[], detailed?: boolean): any[];
+  handNovels(novels: any[]): any[];
 
   /**
    * 格式化小说列表

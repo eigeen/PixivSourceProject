@@ -1,3 +1,10 @@
+/**
+ * jsLib: 由App注入Runtime的脚本部分，被整个运行环境共享，存在一些用法限制
+ * 导入此模块的方法将不会被打包进最终的js文件中
+ *
+ * 模块编写时需export对象，否则可能被打包器优化掉。
+ */
+
 export const cacheSaveSeconds = 7 * 24 * 60 * 60; // 缓存时间7天
 
 export function cacheGetAndSet<T>(cache: CacheManager, key: string, supplyFunc: () => T): T {
@@ -7,6 +14,22 @@ export function cacheGetAndSet<T>(cache: CacheManager, key: string, supplyFunc: 
     cache.put(key, v, cacheSaveSeconds);
   }
   return JSON.parse(v);
+}
+
+export function putInCache(objectName: string, object: any, saveSeconds?: number) {
+  // @ts-ignore
+  const { java, cache }: { java: JavaExt; cache: CacheManager } = this;
+  if (object === undefined) object = null;
+  if (!saveSeconds) saveSeconds = 0;
+  cache.put(objectName, JSON.stringify(object), saveSeconds);
+}
+
+export function getFromCache(objectName: string): any | null {
+  // @ts-ignore
+  const { java, cache }: { java: JavaExt; cache: CacheManager } = this;
+  let object = cache.get(objectName);
+  if (object === undefined || object === null) return null; // 兼容源阅
+  return JSON.parse(object);
 }
 
 export function isHtmlString(str: string): boolean {
@@ -20,6 +43,26 @@ export function isJsonString(str: string): boolean {
     }
   } catch (e) {}
   return false;
+}
+
+export function getWebViewUA(): string {
+  // @ts-ignore
+  const { java, cache }: { java: JavaExt; cache: CacheManager } = this;
+  let userAgent = String(java.getWebViewUA());
+  if (userAgent.includes("Windows NT 10.0; Win64; x64")) {
+    userAgent =
+      "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36";
+  }
+  // java.log(`userAgent=${userAgent}`)
+  cache.put("userAgent", userAgent);
+  return String(userAgent);
+}
+
+export function isLogin(): boolean {
+  // @ts-ignore
+  const { java, cache }: { java: JavaExt; cache: CacheManager } = this;
+  let cookie = String(java.getCookie("https://www.pixiv.net/", null));
+  return cookie.includes("first_visit_datetime");
 }
 
 export function getAjaxJson(url: string, forceUpdate: boolean = false): any {
@@ -130,7 +173,7 @@ export function urlUserAllWorks(userId: string | number): string {
   return `https://www.pixiv.net/ajax/user/${userId}/profile/all?lang=zh`;
 }
 
-export function urlSearchNovel(novelName: string, page: number): string {
+export function urlSearchNovel(novelName: string, page: number | string): string {
   return `https://www.pixiv.net/ajax/search/novels/${encodeURI(novelName)}?word=${encodeURI(novelName)}&order=date_d&mode=all&p=${page}&s_mode=s_tag&lang=zh`;
 }
 
@@ -165,6 +208,14 @@ export function urlIllustOriginal(illustId: string | number, order: number): str
     return JSON.parse(java.ajax(url));
   }).body.urls.original;
   return urlCoverUrl(illustOriginal.replace(`_p0`, `_p${order - 1}`));
+}
+
+export function urlEmojiUrl(emojiId: string | number) {
+  return urlCoverUrl(`https://s.pximg.net/common/images/emoji/${emojiId}.png`);
+}
+
+export function urlStampUrl(stampId: string | number) {
+  return urlCoverUrl(`https://s.pximg.net/common/images/stamp/generated-stamps/${stampId}_s.jpg`);
 }
 
 export function urlMessageThreadLatest(max: number): string {
@@ -242,13 +293,8 @@ export function updateSource() {
     sourceName: string = "pixiv", // default pixiv
     sourceNameCapitalize: string,
     index = 0;
-  if (source.bookSourceUrl.includes("pixiv")) {
-    sourceName = "pixiv";
-  } else if (source.bookSourceUrl.includes("furrynovel")) {
-    sourceName = "linpx";
-  }
-
-  // @ts-ignore
+  if (source.bookSourceUrl.includes("pixiv")) sourceName = "pixiv";
+  else if (source.bookSourceUrl.includes("furrynovel")) sourceName = "linpx";
   sourceNameCapitalize = sourceName[0].toUpperCase() + sourceName.substring(1);
 
   if (source.bookSourceName.includes("备用")) index = 1;
@@ -282,15 +328,17 @@ export function updateSource() {
     } catch (e) {
       onlineSource = {
         lastUpdateTime: new Date().getTime(),
-        bookSourceComment: source.bookSourceComment || "",
+        bookSourceComment: source.bookSourceComment,
       };
     }
   }
   comment = onlineSource.bookSourceComment.split("\n");
   // comment = source.bookSourceComment.split("\n")
-  let htm = `data:text/html; charset=utf-8,
-<html>
+  let htm = `
+<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>更新 ${source.bookSourceName} 书源</title>
     <style> 
@@ -308,11 +356,11 @@ export function updateSource() {
         <th colspan="2"> ${source.bookSourceName} 书源 <a href="https://github.com/windyhusky/PixivSource/blob/main/doc/${sourceNameCapitalize}.md">🔰 使用指南</a></th>
         <tr>
             <td>☁️ 远程版本：${onlineSource.bookSourceComment.split("\n")[2].replace("书源版本：", "")}</td>
-            <td>📆 更新：${timeFormat(onlineSource.lastUpdateTime.toString())}</td>
+            <td>📆 更新：${timeFormat(onlineSource.lastUpdateTime)}</td>
         </tr>
         <tr>
-            <td>📥 本地版本：${(source.bookSourceComment || "").split("\n")[2]?.replace("书源版本：", "") || ""}</td>
-            <td>📆 更新：${timeFormat((source.lastUpdateTime || new Date().getTime()).toString())}</td>
+            <td>📥 本地版本：${source.bookSourceComment.split("\n")[2].replace("书源版本：", "")}</td>
+            <td>📆 更新：${timeFormat(source.lastUpdateTime)}</td>
         </tr> 
         <tr><td colspan="2" style="text-align: left;">${comment.slice(3, 10).join("<br>")}</td></tr>
         <tr><td colspan="2" style="text-align: left;">${comment.slice(comment.length - 15, comment.length).join("<br>")}</td></tr>
@@ -355,8 +403,6 @@ export function updateSource() {
     </table>
 </body>
 </html>`;
-  java.startBrowser(htm, "更新书源");
+  java.startBrowser(`data:text/html;charset=utf-8;base64, ${java.base64Encode(htm)}`, "更新书源");
   return [];
 }
-
-

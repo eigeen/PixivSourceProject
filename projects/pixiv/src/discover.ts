@@ -3,6 +3,7 @@ import {
   getAjaxAllJson,
   getAjaxJson,
   getWebviewJson,
+  isLogin,
   sleepToast,
   updateSource,
   urlNovelDetailed,
@@ -15,14 +16,16 @@ const util = getUtil();
 
 export var seriesSet = new Set(); // 存储seriesID 有BUG无法处理翻页
 
-function handlerFactory() {
+type Callback = () => any;
+
+function handlerFactory(): Callback {
   if (baseUrl.includes("https://cdn.jsdelivr.net")) {
     return () => {
       updateSource();
       return [];
     };
   }
-  if (!util.isLogin()) {
+  if (!isLogin()) {
     return handlerNoLogin();
   }
   if (baseUrl.includes("/bookmark")) {
@@ -62,10 +65,13 @@ function handlerFactory() {
   if (baseUrl.includes("/editors_picks")) {
     return handlerRanking();
   }
-  if (baseUrl.includes("https://www.pixiv.net")) {
+  if (baseUrl.includes("/ajax/search/novels")) {
+    return handlerSearch();
+  }
+  if (baseUrl.startsWith("https://www.pixiv.net")) {
     return handlerRanking();
   } else {
-    return [];
+    return () => [];
   }
 }
 
@@ -121,6 +127,14 @@ function handlerDiscovery() {
   };
 }
 
+// 搜索标签
+function handlerSearch() {
+  return () => {
+    let res = JSON.parse(result);
+    return util.formatNovels(util.handNovels(util.combineNovels(res.body.novel.data)));
+  };
+}
+
 // 追更列表，热门分类
 function handlerWatchList() {
   return () => {
@@ -134,7 +148,7 @@ function handlerRanking() {
   if (util.settings.IS_LEGADO) return handlerRankingAjaxAll();
   // else if (util.settings.IS_SOURCE_READ) return handlerRankingWebview()
   else if (util.settings.IS_SOURCE_READ) return handlerRankingAjax();
-  else return [];
+  else return () => [];
 }
 
 // 排行榜，书签，首页，编辑部推荐，顺序相同
@@ -214,5 +228,5 @@ function handlerRankingAjax() {
 (() => {
   java.log("[DEBUG] load discover.ts");
 
-  return handlerFactory();
+  return handlerFactory()();
 })();

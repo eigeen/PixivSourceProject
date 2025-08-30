@@ -1,4 +1,4 @@
-import { getAjaxJson, sleepToast, urlUserDetailed } from "./base.jsLib";
+import { getAjaxJson, sleepToast, urlSearchNovel, urlUserDetailed } from "./base.jsLib";
 
 interface BookSourceSettings {
   SHOW_GENERAL_NEW: boolean;
@@ -133,7 +133,8 @@ const generalgGenre: DiscoverList = [
   { 其他: "https://www.pixiv.net/ajax/genre/novel/other?mode=safe&lang=zh" },
 ];
 
-const bookmarks: DiscoverList = [{ "❤️ 他人收藏 ❤️": "" }];
+const likeTagLinks: DiscoverList = [{ "📌 喜欢标签 📌": "" }];
+const othersBookmarks: DiscoverList = [{ "❤️ 他人收藏 ❤️": "" }];
 
 li = li.concat(normal);
 li = li.concat(r18New);
@@ -153,40 +154,45 @@ if (settings.SHOW_GENERAL_GENRE === true) {
 
 sleepToast('使用指南🔖\n\n发现 - 更新 - 点击"🔰 使用指南" - 查看', 0);
 
-const isSourceRead = eval(String(cache.get("isSourceRead")));
-const isBackupSource = eval(String(cache.get("isBackupSource")));
-if (!isBackupSource && !isSourceRead) {
-  const authors = JSON.parse(cache.get("pixivLikeAuthors") || "[]");
-  if (authors !== null && authors.length >= 1) {
-    authors.forEach((authorId: string | number) => {
-      const resp = getAjaxJson(urlUserDetailed(authorId));
-      if (resp.error !== true) {
-        const bookmark: Record<string, string> = {};
-        bookmark[resp.body.name] =
-          `https://www.pixiv.net/ajax/user/${authorId}/novels/bookmarks?tag=&offset={{(page-1)*24}}&limit=24&rest=show&lang=zh`;
-        bookmarks.push(bookmark);
-      }
-    });
-    li = li.concat(bookmarks);
-  } else {
-    sleepToast(
-      "❤️ 他人收藏\n 刷新发现前，请在【订阅源】设置源变量，并在【订阅源】的登录界面点击 ❤️ 他人收藏 导入数据",
-      0
-    );
-  }
+// 收藏标签
+const likeTags: string[] = JSON.parse(cache.get("likeTags") || "[]");
+if (likeTags !== null && likeTags.length >= 1) {
+  likeTags.forEach((tag) => {
+    let tagLink: Record<string, string> = {};
+    tagLink[tag] = `${urlSearchNovel(tag, "{{page}}")}`;
+    likeTagLinks.push(tagLink);
+  });
+  li = li.concat(likeTagLinks);
 }
 
+// 他人收藏
+const authors: Record<string, string> = JSON.parse(cache.get("likeAuthors") || "{}");
+if (authors !== null && Object.keys(authors).length >= 1) {
+  for (let authorId in authors) {
+    let authorName = authors[authorId];
+    let bookmark: Record<string, string> = {};
+    bookmark[authorName] =
+      `https://www.pixiv.net/ajax/user/${authorId}/novels/bookmarks?tag=&offset={{(page-1)*24}}&limit=24&rest=show&lang=zh`;
+    othersBookmarks.push(bookmark);
+  }
+  li = li.concat(othersBookmarks);
+}
+
+// 添加格式
 li.forEach((item) => {
   item.title = Object.keys(item)[0];
   item.url = Object.values(item)[0];
   delete item[Object.keys(item)[0]];
-  item.style = {
-    layout_flexGrow: 1,
-    layout_flexShrink: 1,
-    layout_alignSelf: "auto",
-    layout_wrapBefore: "false",
-    layout_flexBasisPercent: item.url === "" ? 1 : -1,
-  };
+  item.style = {};
+  item.style.layout_flexGrow = 1;
+  item.style.layout_flexShrink = 1;
+  item.style.layout_alignSelf = "auto";
+  item.style.layout_wrapBefore = "false";
+  if (item.url === "") {
+    item.style.layout_flexBasisPercent = 1;
+  } else {
+    item.style.layout_flexBasisPercent = -1;
+  }
 });
 
 JSON.stringify(li);
