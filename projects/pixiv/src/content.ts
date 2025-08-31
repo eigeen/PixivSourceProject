@@ -30,8 +30,8 @@ const emoji: Record<string, number> = {
 
 export function getNovelInfo(res: any) {
   // 放入小说信息以便登陆界面使用
-  let novel = source.getLoginInfoMap() as Record<string, any>;
-  if (novel === undefined) novel = JSON.parse(cache.get("novel")!);
+  let novel = source.getLoginInfoMap();
+  if (!novel) novel = JSON.parse(cache.get("novel")!) as Record<string, any>;
   novel.id = Number(res.id);
   novel.title = res.title;
   novel.userId = res.userId;

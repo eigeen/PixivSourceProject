@@ -210,7 +210,7 @@ declare global {
     /** 获取登录信息 */
     getLoginInfo(): string;
     /** 获取登录信息映射 */
-    getLoginInfoMap(): Record<string, string>;
+    getLoginInfoMap(): Record<string, any> | null;
     /** 保存用户信息,aes加密 */
     putLoginInfo(info: string): boolean;
     /** 清除登录信息 */
