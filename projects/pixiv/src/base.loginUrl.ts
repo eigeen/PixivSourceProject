@@ -1,9 +1,4 @@
-import {
-  MAX_PAGE_CONFIG_NAME,
-  MaxPageConfigKey,
-  type Settings,
-  SETTINGS_NAME,
-} from "./settings";
+import { MAX_PAGE_CONFIG_NAME, MaxPageConfigKey, type Settings, SETTINGS_NAME } from "./settings";
 import {
   cacheSaveSeconds,
   getAjaxJson,
@@ -129,7 +124,7 @@ export function getCookie(): string | null {
 
 export function getNovel() {
   let novel = source.getLoginInfoMap();
-  if (novel === undefined) novel = getFromCache("novel");
+  if (!novel) novel = getFromCache("novel") as Record<string, any>;
   return novel;
 }
 
