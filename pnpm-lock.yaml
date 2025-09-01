@@ -44,9 +44,6 @@ importers:
       '@reader-source/common':
         specifier: workspace:*
         version: link:../../packages/common
-      npm-run-all2:
-        specifier: ^8.0.4
-        version: 8.0.4
 
 packages:
 
