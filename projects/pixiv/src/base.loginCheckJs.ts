@@ -106,33 +106,6 @@ function getHeaders() {
     return headers;
 }
 
-function getBlockAuthorsFromSource() {
-    let authors = [];
-    try {
-        authors = JSON.parse(`[${source.getVariable().replace("，", ",")}]`);
-        // sleepToastWithDefault(JSON.stringify(authors))
-    } catch (e) {
-        sleepToastWithDefault(
-            "🚫 屏蔽作者\n⚠️ 【书源】源变量设置有误\n输入作者ID，以英文逗号间隔，保存"
-        );
-    }
-    return authors;
-}
-
-function syncBlockAuthorList() {
-    let authors1 = getFromCache("blockAuthorList");
-    let authors2 = getBlockAuthorsFromSource();
-    util.debugFunc(() => {
-        java.log(`屏蔽作者：缓存　：${JSON.stringify(authors1)}`);
-        java.log(`屏蔽作者：源变量：${JSON.stringify(authors2)}`);
-    });
-    putInCache("blockAuthorList", authors2);
-    if (authors1 === null || authors1.length !== authors2.length) {
-        java.log("🚫 屏蔽作者：已将源变量同步至缓存");
-    } else if (authors2.length === 0) {
-        java.log("🚫 屏蔽作者：已清空屏蔽作者");
-    }
-}
 
 function ConstructUtil(): Util {
     // init settings
@@ -140,14 +113,10 @@ function ConstructUtil(): Util {
     java.log(`🅿️ ${source.bookSourceComment?.split("\n")[0]}`);
     java.log(`📌 ${source.bookSourceComment?.split("\n")[2]}`);
     if (isSourceRead()) {
-        java.log(
-            `📆 更新时间：${source.lastUpdateTime ? java.timeFormat(source.lastUpdateTime) : "未知"}`
-        );
+        java.log(`📆 更新时间：${source.lastUpdateTime ? java.timeFormat(source.lastUpdateTime) : "未知"}`);
         java.log("📱 软件平台：🍎 源阅 SourceRead");
     } else {
-        java.log(
-            `📆 更新时间：${source.lastUpdateTime ? java.timeFormat(source.lastUpdateTime) : "未知"}`
-        );
+        java.log(`📆 更新时间：${source.lastUpdateTime ? java.timeFormat(source.lastUpdateTime) : "未知"}`);
         java.log("📱 软件平台：🤖 开源阅读 Legado");
     }
 
