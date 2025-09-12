@@ -686,8 +686,6 @@ const u = ConstructUtil();
 util = u;
 java.put("util", objStringify(util));
 
-syncBlockAuthorList();
-
 if (result.code() === 200) {
     if (isBackupSource() && !isLogin()) {
         util.getCsrfToken();
