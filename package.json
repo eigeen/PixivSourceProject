@@ -7,7 +7,8 @@
     "build:pixiv": "pnpm --filter=@reader-source/pixiv run build",
     "clean": "rimraf projects/pixiv/dist dist",
     "build-json": "tsx scripts/build-pixiv.ts",
-    "build:all": "npm-run-all2 clean build:pixiv build-json"
+    "build:all": "npm-run-all2 clean build:pixiv build-json",
+    "format": "prettier --write ."
   },
   "keywords": [],
   "author": "",

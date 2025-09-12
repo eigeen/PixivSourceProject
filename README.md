@@ -53,8 +53,11 @@ npm install -g pnpm
 pnpm install
 ```
 
-### 构建书源
+### 开发构建
 ```bash
+# 格式化
+pnpm run format
+
 # 完整构建流程
 pnpm run build:all
 
