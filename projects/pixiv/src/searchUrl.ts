@@ -11,43 +11,43 @@ let keywordSplit = key.split(" ");
 let keyword = "";
 let limitedTextCount;
 if (key.includes("字数") || key.includes("字數")) {
-  limitedTextCount = keywordSplit.pop();
-  keyword = keywordSplit.join(" ");
+    limitedTextCount = keywordSplit.pop();
+    keyword = keywordSplit.join(" ");
 } else {
-  limitedTextCount = "";
-  keyword = key;
+    limitedTextCount = "";
+    keyword = key;
 }
 java.put("keyword", keyword);
 java.put("limitedTextCount", limitedTextCount);
 
 if (keyword.startsWith("@") || keyword.startsWith("＠")) {
-  if (keyword.includes("#") || keyword.includes("＃")) {
-    let author = keyword.split(" ")[0];
-    let tags = keyword.replace(author, "").trim().slice(1);
-    java.put("keyword", author);
-    java.put("inputTags", tags);
-    java.log(`👤 搜索作者：${author} #️⃣ 过滤标签：${tags.replace(" ", "、")}`);
-  } else {
-    java.put("keyword", keyword);
-    java.log(`👤 搜索作者：${keyword.slice(1)}`);
-  }
-} else if (keyword.startsWith("#") || keyword.startsWith("＃")) {
-  keyword = keyword.slice(1);
-  if (keyword.includes("@") || keyword.includes("＠")) {
-    const author = keyword.match(new RegExp(/[@＠](.*)/));
-    if (author) {
-      keyword = keyword.replace(author[0], "").trim();
-      java.put("inputAuthor", author[1]);
-      java.log(`#️⃣ 搜索标签：${keyword} 👤 过滤作者：${author[1]}`);
+    if (keyword.includes("#") || keyword.includes("＃")) {
+        let author = keyword.split(" ")[0];
+        let tags = keyword.replace(author, "").trim().slice(1);
+        java.put("keyword", author);
+        java.put("inputTags", tags);
+        java.log(`👤 搜索作者：${author} #️⃣ 过滤标签：${tags.replace(" ", "、")}`);
     } else {
-      java.log(`#️⃣ 搜索标签：${keyword}`);
+        java.put("keyword", keyword);
+        java.log(`👤 搜索作者：${keyword.slice(1)}`);
     }
-  } else {
-    java.log(`#️⃣ 搜索标签：${keyword}`);
-  }
-  java.put("keyword", `#${keyword}`);
+} else if (keyword.startsWith("#") || keyword.startsWith("＃")) {
+    keyword = keyword.slice(1);
+    if (keyword.includes("@") || keyword.includes("＠")) {
+        const author = keyword.match(new RegExp(/[@＠](.*)/));
+        if (author) {
+            keyword = keyword.replace(author[0], "").trim();
+            java.put("inputAuthor", author[1]);
+            java.log(`#️⃣ 搜索标签：${keyword} 👤 过滤作者：${author[1]}`);
+        } else {
+            java.log(`#️⃣ 搜索标签：${keyword}`);
+        }
+    } else {
+        java.log(`#️⃣ 搜索标签：${keyword}`);
+    }
+    java.put("keyword", `#${keyword}`);
 } else {
-  java.log(`🔍 搜索内容：${keyword}`);
+    java.log(`🔍 搜索内容：${keyword}`);
 }
 urlSearchSeries(keyword, page);
 
