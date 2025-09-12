@@ -52,5 +52,6 @@ jobs:
         if: github.ref_type == 'tag'
         with:
           draft: true
+          generate_release_notes: true
           files: |
             dist/*
