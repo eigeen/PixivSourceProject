@@ -406,3 +406,61 @@ export function updateSource() {
   java.startBrowser(`data:text/html;charset=utf-8;base64, ${java.base64Encode(htm)}`, "更新书源");
   return [];
 }
+
+/**
+ * 从缓存获取 likeAuthors 数据并转换为有序的 Map
+ * @returns Map<string, string> 用户ID到用户名的映射
+ */
+export function getLikeAuthorsMap(): Map<string, string> {
+  // @ts-ignore
+  const { cache }: { cache: CacheManager } = this;
+
+  const cached = cache.get("likeAuthors");
+  const likeAuthorsMap = new Map<string, string>();
+
+  if (cached === null || cached === undefined) {
+    return likeAuthorsMap;
+  }
+
+  let parsedData: any;
+  try {
+    parsedData = JSON.parse(cached);
+  } catch (e) {
+    return likeAuthorsMap;
+  }
+
+  // 处理新格式：数组形式 [{'key1': 'value1'}, {'key2': 'value2'}]
+  if (Array.isArray(parsedData)) {
+    parsedData.forEach((item: any) => {
+      for (const key in item) {
+        likeAuthorsMap.set(key, item[key]);
+      }
+    });
+  } else {
+    // 兼容旧格式：对象形式 {'key1': 'value1', 'key2': 'value2'}
+    for (const key in parsedData) {
+      likeAuthorsMap.set(key, parsedData[key]);
+    }
+  }
+
+  return likeAuthorsMap;
+}
+
+/**
+ * 将 Map 转换为有序数组格式并保存到缓存
+ * @param likeAuthorsMap 用户ID到用户名的映射
+ */
+export function saveLikeAuthorsMap(likeAuthorsMap: Map<string, string>): void {
+  // @ts-ignore
+  const { cache }: { cache: CacheManager } = this;
+
+  const orderedArray: Array<Record<string, string>> = [];
+
+  likeAuthorsMap.forEach((userName, userId) => {
+    const item: Record<string, string> = {};
+    item[userId] = userName;
+    orderedArray.push(item);
+  });
+
+  cache.put("likeAuthors", JSON.stringify(orderedArray));
+}

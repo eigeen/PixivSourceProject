@@ -1,4 +1,5 @@
-import { getAjaxJson, sleepToast, urlSearchNovel, urlUserDetailed } from "./base.jsLib";
+import { sleepToast, urlSearchNovel } from "./base.jsLib";
+import { getLikeAuthorsMap } from "./base.jsLib";
 
 interface BookSourceSettings {
   SHOW_GENERAL_NEW: boolean;
@@ -166,15 +167,14 @@ if (likeTags !== null && likeTags.length >= 1) {
 }
 
 // 他人收藏
-const authors: Record<string, string> = JSON.parse(cache.get("likeAuthors") || "{}");
-if (authors !== null && Object.keys(authors).length >= 1) {
-  for (let authorId in authors) {
-    let authorName = authors[authorId];
+const likeAuthors = getLikeAuthorsMap();
+if (likeAuthors.size > 0) {
+  likeAuthors.forEach((authorName, authorId) => {
     let bookmark: Record<string, string> = {};
     bookmark[authorName] =
       `https://www.pixiv.net/ajax/user/${authorId}/novels/bookmarks?tag=&offset={{(page-1)*24}}&limit=24&rest=show&lang=zh`;
     othersBookmarks.push(bookmark);
-  }
+  });
   li = li.concat(othersBookmarks);
 }
 

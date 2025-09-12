@@ -1,4 +1,5 @@
 import { MAX_PAGE_CONFIG_NAME, MaxPageConfigKey, type Settings, SETTINGS_NAME } from "./settings";
+import { getLikeAuthorsMap, saveLikeAuthorsMap } from "./base.jsLib";
 import {
   cacheSaveSeconds,
   getAjaxJson,
@@ -616,18 +617,16 @@ export function likeTagsDelete() {
 }
 
 export function likeAuthorsShow() {
-  let likeAuthors = getFromCache(`likeAuthors`);
-  if (likeAuthors === null) likeAuthors = {};
+  const likeAuthors = getLikeAuthorsMap();
   let text = "";
-  for (let key in likeAuthors) {
-    text += `@${likeAuthors[key]} ${key}\n`;
-  }
+  likeAuthors.forEach((userName, userId) => {
+    text += `@${userName} ${userId}\n`;
+  });
   sleepToastWithDefault(`👀 查看收藏\n❤️ 他人收藏\n\n${text.trim()}`, 5);
 }
 
 export function likeAuthorsAdd() {
-  let likeAuthors = getFromCache(`likeAuthors`);
-  if (likeAuthors === null) likeAuthors = {};
+  const likeAuthors = getLikeAuthorsMap();
 
   let word = String(result.get("输入内容")).trim();
   if (word.startsWith("@") || word.startsWith("＠")) {
@@ -643,7 +642,7 @@ export function likeAuthorsAdd() {
   if (word === "") {
     // 无输入内容，添加当前小说的作者
     let novel = getNovel();
-    likeAuthors[novel.userId] = novel.userName;
+    likeAuthors.set(novel.userId, novel.userName);
     word = `@${novel.userName} ${novel.userId}`;
     sleepToastWithDefault(
       `❤️ 添加收藏\n❤️ 他人收藏\n\n✅ 已将【${word}】加入收藏列表了，请于发现页刷新后查看\n\n⚠️ 输入【用户ID】可关注其他用户的收藏\n默认关注当前作者(用户)`,
@@ -655,7 +654,7 @@ export function likeAuthorsAdd() {
     if (Number.isInteger(userId) && userId > 0) {
       // 输入纯数字，添加对应ID的作者
       let user = getAjaxJson(urlUserDetailed(userId)).body;
-      likeAuthors[user.userId] = user.name;
+      likeAuthors.set(user.userId, user.name);
       word = `@${user.name} ${user.userId}`;
       sleepToastWithDefault(
         `❤️ 添加收藏\n❤️ 他人收藏\n\n✅ 已将【${word}】加入收藏列表了，请于发现页刷新后查看`
@@ -664,12 +663,11 @@ export function likeAuthorsAdd() {
       sleepToastWithDefault(`❤️ 添加收藏\n❤️ 他人收藏\n\n⚠️ 输入【用户ID】可关注其他用户的收藏`, 2);
     }
   }
-  putInCache(`likeAuthors`, likeAuthors);
+  saveLikeAuthorsMap(likeAuthors);
 }
 
 export function likeAuthorsDelete() {
-  let likeAuthors = getFromCache(`likeAuthors`);
-  if (likeAuthors === null) likeAuthors = {};
+  const likeAuthors = getLikeAuthorsMap();
 
   let word = String(result.get("输入内容")).trim();
   if (word.startsWith("@") || word.startsWith("＠")) {
@@ -684,7 +682,7 @@ export function likeAuthorsDelete() {
 
   if (word === "") {
     let novel = getNovel();
-    delete likeAuthors[novel.userId];
+    likeAuthors.delete(novel.userId);
     word = `@${novel.userName} ${novel.userId}`;
     sleepToastWithDefault(
       `🖤 取消收藏\n❤️ 他人收藏\n\n✅ 已取关【${word}】\n\n输入【用户ID】可取关其他用户\n默认取关当前作者(用户)`
@@ -693,26 +691,32 @@ export function likeAuthorsDelete() {
     // 显式转换为数字并校验是否为正整数
     const userId = Number(word);
 
-    if (Number.isInteger(userId) && userId > 0 && likeAuthors.hasOwnProperty(userId)) {
+    if (Number.isInteger(userId) && userId > 0 && likeAuthors.has(userId.toString())) {
       // 输入纯数字且存在于收藏中
       let user = getAjaxJson(urlUserDetailed(userId)).body;
-      delete likeAuthors[userId];
+      likeAuthors.delete(userId.toString());
       word = `@${user.name} ${user.userId}`;
       sleepToastWithDefault(`🖤 取消收藏\n❤️ 他人收藏\n\n✅ 已取关【${word}】`);
-    } else if (Object.values(likeAuthors).includes(word)) {
-      // 输入的是作者名称
-      let userId = Object.keys(likeAuthors).find((key) => likeAuthors[key] === word);
-      if (userId) {
-        let user = getAjaxJson(urlUserDetailed(userId)).body;
-        delete likeAuthors[userId];
+    } else {
+      // 检查是否输入的是作者名称
+      let foundUserId: string | null = null;
+      likeAuthors.forEach((userName, userId) => {
+        if (userName === word) {
+          foundUserId = userId;
+        }
+      });
+
+      if (foundUserId) {
+        let user = getAjaxJson(urlUserDetailed(foundUserId)).body;
+        likeAuthors.delete(foundUserId);
         word = `@${user.name} ${user.userId}`;
         sleepToastWithDefault(`🖤 取消收藏\n❤️ 他人收藏\n\n✅ 已取关【${word}】`);
+      } else {
+        sleepToastWithDefault(`🖤 取消收藏\n❤️ 他人收藏\n\n⚠️ 未找到匹配的用户ID或作者名称`);
       }
-    } else {
-      sleepToastWithDefault(`🖤 取消收藏\n❤️ 他人收藏\n\n⚠️ 未找到匹配的用户ID或作者名称`);
     }
   }
-  putInCache(`likeAuthors`, likeAuthors);
+  saveLikeAuthorsMap(likeAuthors);
 }
 
 export function startBrowser(url: string, title: string) {
