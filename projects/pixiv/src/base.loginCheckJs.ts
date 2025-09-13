@@ -261,10 +261,9 @@ function ConstructUtil(): Util {
                 csrfToken = null;
                 sleepToast("未登录账号(csrfToken)");
             }
-            java.log(typeof csrfToken);
             java.log(csrfToken);
+            cache.put("csrfToken", csrfToken);
         }
-        cache.put("csrfToken", csrfToken); // 与登录设备有关
         return csrfToken;
     };
 
@@ -740,9 +739,7 @@ util = u;
 java.put("util", objStringify(util));
 
 if (result.code() === 200) {
-    if (isBackupSource() && !isLogin()) {
-        util.getCsrfToken();
-    }
+    util.getCsrfToken();
     getPixivUid();
     getWebViewUA();
     util.getCookie();

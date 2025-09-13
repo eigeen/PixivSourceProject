@@ -141,22 +141,21 @@ export function getPostBody(
     body: any,
     headers: Record<string, string> = getFromCache("headers") || {},
 ): { error: boolean; [key: string]: any } {
-    if (headers === undefined) headers = getFromCache("headers");
     if (isJsonString(body)) {
         headers["content-type"] = "application/json; charset=utf-8";
-    } else if (typeof body == "string") {
+    } else if (typeof body === "string") {
         headers["content-type"] =
             "application/x-www-form-urlencoded; charset=utf-8";
     }
     try {
+        java.log(`getPostBody(${url}, ${body}, ${headers})`);
         return JSON.parse(java.post(url, body, headers).body());
     } catch (e) {
-        // sleepToast(e)
         // sleepToast(JSON.stringify(headers))
-        if (String(e).includes("400")) sleepToast(`⚠️ 缺少 headers`, 1);
+        if (String(e).includes("400")) sleepToast(`⚠️ 缺少 headers ${JSON.stringify(headers)}`, 1);
         else if (String(e).includes("403"))
             sleepToast(`⚠️ 缺少 cookie 或 cookie 过期`, 1);
-        else if (String(e).includes("404")) sleepToast(`⚠️ 404`, 1);
+        else if (String(e).includes("404")) sleepToast(`⚠️ 404 | headers: ${JSON.stringify(headers)}`, 1);
         else if (String(e).includes("422")) sleepToast(`⚠️ 请求信息有误`, 1);
         return { error: true };
     }
@@ -437,7 +436,7 @@ export function userUnFollow() {
 
 export function userFollowFactory(code = 1) {
     const novel = getNovel();
-    let lastStatus = getFromCache(`follow${novel.userId}`);
+    const lastStatus = getFromCache(`follow${novel.userId}`);
     if (lastStatus === true) code = 0;
 
     if (code === 0) userUnFollow();
