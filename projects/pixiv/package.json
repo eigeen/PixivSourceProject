@@ -1,19 +1,19 @@
 {
-  "name": "@reader-source/pixiv",
-  "version": "1.0.0",
-  "description": "",
-  "main": "",
-  "type": "module",
-  "scripts": {
-    "build": "rollup -c"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@reader-source/common": "workspace:*"
-  },
-  "dependencies": {
-    "tslib": "^2.8.1"
-  }
+    "name": "@reader-source/pixiv",
+    "version": "1.0.0",
+    "description": "",
+    "main": "",
+    "type": "module",
+    "scripts": {
+        "build": "rollup -c"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "@reader-source/common": "workspace:*"
+    },
+    "dependencies": {
+        "tslib": "^2.8.1"
+    }
 }

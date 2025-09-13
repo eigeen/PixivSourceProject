@@ -44,11 +44,16 @@ function seriesHandler(res: any) {
 
     //发送请求获得相应数量的目录列表
     function sendAjaxForGetChapters(lastIndex: number) {
-        const resp = getAjaxJson(urlSeriesNovels(seriesID, limit, lastIndex), true);
+        const resp = getAjaxJson(
+            urlSeriesNovels(seriesID, limit, lastIndex),
+            true,
+        );
         const res = resp.body.thumbnails.novel;
         // res = resp.body.page.seriesContents
         res.forEach((v: any) => {
-            v.title = v.title.replace(RegExp(/^\s+|\s+$/g), "").replace(RegExp(/（|）|-/g), "");
+            v.title = v.title
+                .replace(RegExp(/^\s+|\s+$/g), "")
+                .replace(RegExp(/（|）|-/g), "");
             v.chapterUrl = urlNovel(v.id);
             novelIds.push(v.id);
             if (v.updateDate !== undefined) {
@@ -67,8 +72,10 @@ function seriesHandler(res: any) {
 
     if (!util.settings.SHOW_UPDATE_TIME) {
         returnList = getAjaxJson(urlSeriesNovelsTitles(seriesID), true).body;
-        returnList.forEach((v) => {
-            v.title = v.title.replace(RegExp(/^\s+|\s+$/g), "").replace(RegExp(/（|）|-/g), "");
+        returnList.forEach(v => {
+            v.title = v.title
+                .replace(RegExp(/^\s+|\s+$/g), "")
+                .replace(RegExp(/（|）|-/g), "");
             v.chapterUrl = urlNovel(v.id);
             novelIds.push(v.id);
         });
@@ -84,7 +91,11 @@ function seriesHandler(res: any) {
         }
     }
     // 放入信息以便登陆界面使用
-    cache.put(`novelIds${seriesID}`, JSON.stringify(novelIds), cacheSaveSeconds);
+    cache.put(
+        `novelIds${seriesID}`,
+        JSON.stringify(novelIds),
+        cacheSaveSeconds,
+    );
     // java.log(JSON.stringify(returnList))
     return returnList;
 }

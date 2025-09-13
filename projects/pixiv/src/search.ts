@@ -78,7 +78,9 @@ function getUserNovels() {
         const html = java.ajax(urlSearchUser(username));
         // java.log(html)
         // 仅匹配有投稿作品的用户
-        let match = html.match(new RegExp(`"userIds":\\[(?:(?:\\d+,?)+)]`)) as string[] | null;
+        let match = html.match(new RegExp(`"userIds":\\[(?:(?:\\d+,?)+)]`)) as
+            | string[]
+            | null;
         // java.log(JSON.stringify(match))
         if (match === null || match.length === 0) {
             return [];
@@ -87,7 +89,7 @@ function getUserNovels() {
         match = JSON.stringify(match).replace("\\", "").split(",");
         // java.log(JSON.stringify(match))
         let regNumber = new RegExp("\\d+");
-        uidList = match.map((v) => {
+        uidList = match.map(v => {
             return v.match(regNumber)?.[0];
         });
         java.log(`👤 获取作者ID：${JSON.stringify(uidList)}`);
@@ -125,7 +127,7 @@ function getUserNovels() {
 
         // 获取所有系列内部的小说 ID
         let seriesNovelIds: number[] = [];
-        seriesIds.forEach((seriesId) => {
+        seriesIds.forEach(seriesId => {
             let returnList = getAjaxJson(urlSeriesNovelsTitles(seriesId)).body;
             returnList.map((novel: any) => {
                 return seriesNovelIds.push(novel.id);
@@ -136,25 +138,31 @@ function getUserNovels() {
 
         // 获取单篇小说
         if (novelIds.length >= 1 && util.settings.IS_LEGADO) {
-            novelIds = novelIds.filter((novelid) => !seriesNovelIds.includes(Number(novelid)));
+            novelIds = novelIds.filter(
+                novelid => !seriesNovelIds.includes(Number(novelid)),
+            );
             novelIds = novelIds.reverse().slice((page - 1) * 20, page * 20);
             // java.log(`真单篇的小说ID：${JSON.stringify(novelIds)}`)
             // java.log(JSON.stringify(novelIds.length))
-            let novelUrls = novelIds.map((novelId) => {
+            let novelUrls = novelIds.map(novelId => {
                 return urlNovelDetailed(novelId);
             });
             // java.log(JSON.stringify(novelUrls))
             // cache.delete(novelUrls)
-            novels = novels.concat(getAjaxAllJson(novelUrls).map((resp) => resp.body));
+            novels = novels.concat(
+                getAjaxAllJson(novelUrls).map(resp => resp.body),
+            );
         }
 
         // 获取单篇小说
         if (novelIds.length >= 1 && util.settings.IS_SOURCE_READ) {
-            novelIds = novelIds.filter((novelid) => !seriesNovelIds.includes(Number(novelid)));
+            novelIds = novelIds.filter(
+                novelid => !seriesNovelIds.includes(Number(novelid)),
+            );
             // java.log(`真单篇的小说ID：${JSON.stringify(novelIds)}`)
             // java.log(JSON.stringify(novelIds.length))
             novelIds = novelIds.reverse().slice((page - 1) * 20, page * 20);
-            novelIds.forEach((novelId) => {
+            novelIds.forEach(novelId => {
                 // java.log(urlNovelDetailed(novelId))
                 let res = getAjaxJson(urlNovelDetailed(novelId));
                 if (res.error !== true) {
@@ -206,7 +214,11 @@ function getSeries() {
     novels = novels.concat(JSON.parse(result).body.novel.data);
     java.log(urlSearchSeries(name, 1));
     cache.put(urlSearchSeries(name, 1), result, cacheSaveSeconds); // 加入缓存
-    for (let page = Number(java.get("page")) + 1; page <= lastPage && page <= maxPages; page++) {
+    for (
+        let page = Number(java.get("page")) + 1;
+        page <= lastPage && page <= maxPages;
+        page++
+    ) {
         novels = novels.concat(search(name, "series", page).data);
     }
     return novels;
@@ -225,7 +237,11 @@ function getNovels() {
 
     let resp = search(name, "novel", 1);
     novels = novels.concat(resp.data);
-    for (let page = Number(java.get("page")) + 1; page <= resp.lastPage, page <= maxPages; page++) {
+    for (
+        let page = Number(java.get("page")) + 1;
+        page <= resp.lastPage, page <= maxPages;
+        page++
+    ) {
         novels = novels.concat(search(name, "novel", page).data);
     }
     return util.combineNovels(novels);
@@ -236,11 +252,15 @@ function getConvertNovels() {
     let novelName = String(java.get("keyword"));
     let name1 = String(java.s2t(novelName));
     let name2 = String(java.t2s(novelName));
-    if (name1 !== novelName) novels = novels.concat(search(name1, "novel", 1).data);
-    if (name2 !== novelName) novels = novels.concat(search(name2, "novel", 1).data);
+    if (name1 !== novelName)
+        novels = novels.concat(search(name1, "novel", 1).data);
+    if (name2 !== novelName)
+        novels = novels.concat(search(name2, "novel", 1).data);
     novels = util.combineNovels(novels);
-    if (name1 !== novelName) novels = novels.concat(search(name1, "series", 1).data);
-    if (name2 !== novelName) novels = novels.concat(search(name2, "series", 1).data);
+    if (name1 !== novelName)
+        novels = novels.concat(search(name1, "series", 1).data);
+    if (name2 !== novelName)
+        novels = novels.concat(search(name2, "series", 1).data);
     return novels;
 }
 
@@ -254,17 +274,22 @@ function novelFilter(novels: any[]) {
     if (limitedTextCount.includes("w") || limitedTextCount.includes("W")) {
         let num = limitedTextCount.toLowerCase().split("w");
         textCount = 10000 * Number(num[0]) + 1000 * Number(num[1]);
-    } else if (limitedTextCount.includes("k") || limitedTextCount.includes("K")) {
+    } else if (
+        limitedTextCount.includes("k") ||
+        limitedTextCount.includes("K")
+    ) {
         let num = limitedTextCount.toLowerCase().split("k");
         textCount = 1000 * Number(num[0]) + 100 * Number(num[1]);
     }
 
-    let novels0 = novels.map((novel) => novel.id);
+    let novels0 = novels.map(novel => novel.id);
     if (textCount >= 1) {
-        novels = novels.filter((novel) => novel.textCount >= textCount);
-        let novels1 = novels.map((novel) => novel.id);
+        novels = novels.filter(novel => novel.textCount >= textCount);
+        let novels1 = novels.map(novel => novel.id);
         java.log(`🔢 字数限制：${limitedTextCount}`);
-        java.log(`⏬ 字数限制：过滤前${novels0.length}；过滤后${novels1.length}`);
+        java.log(
+            `⏬ 字数限制：过滤前${novels0.length}；过滤后${novels1.length}`,
+        );
     }
 
     let inputTags = String(java.get("inputTags")).split(" ");
@@ -279,10 +304,14 @@ function novelFilter(novels: any[]) {
         //     // java.log(`${JSON.stringify(novel.tags)}\n${tags.every(item => novel.tags.includes(item))}`)
         //     return tags.every(item => novel.tags.includes(item))
         // })
-        novels = novels.filter((novel) => tags.every((item) => novel.tags.includes(item)));
-        let novels2 = novels.map((novel) => novel.id);
+        novels = novels.filter(novel =>
+            tags.every(item => novel.tags.includes(item)),
+        );
+        let novels2 = novels.map(novel => novel.id);
         java.log(`#️⃣ 过滤标签：${tags.join("、")}`);
-        java.log(`#️⃣ 过滤标签：过滤前${novels0.length}；过滤后${novels2.length}`);
+        java.log(
+            `#️⃣ 过滤标签：过滤前${novels0.length}；过滤后${novels2.length}`,
+        );
     }
 
     let inputAuthor = String(java.get("inputAuthor")).trim();
@@ -291,10 +320,12 @@ function novelFilter(novels: any[]) {
         //     java.log(`${novel.userName}-${novel.userName.includes(inputAuthor)}`)
         //     return novel.userName.includes(inputAuthor)
         // })
-        novels = novels.filter((novel) => novel.userName.includes(inputAuthor));
-        let novels2 = novels.map((novel) => novel.id);
+        novels = novels.filter(novel => novel.userName.includes(inputAuthor));
+        let novels2 = novels.map(novel => novel.id);
         java.log(`👤 过滤作者：${tags.join("、")}`);
-        java.log(`👤 过滤作者：过滤前${novels0.length}；过滤后${novels2.length}`);
+        java.log(
+            `👤 过滤作者：过滤前${novels0.length}；过滤后${novels2.length}`,
+        );
     }
     return novels;
 }
@@ -318,8 +349,10 @@ function novelFilter(novels: any[]) {
         putInCache("maxPages", 1);
         novels = novels.concat(getSeries());
         novels = novels.concat(getNovels());
-        if (util.settings.SEARCH_AUTHOR) novels = novels.concat(getUserNovels());
-        if (util.settings.CONVERT_CHINESE) novels = novels.concat(getConvertNovels());
+        if (util.settings.SEARCH_AUTHOR)
+            novels = novels.concat(getUserNovels());
+        if (util.settings.CONVERT_CHINESE)
+            novels = novels.concat(getConvertNovels());
     }
     // java.log(JSON.stringify(novels))
     // 返回空列表中止流程

@@ -58,7 +58,9 @@ export function getNovelInfo(res: any) {
 
     // 系列 + 阅读，使用当前章节名称
     if (novel.seriesId && util.settings.IS_LEGADO) {
-        let novelIds = JSON.parse(cache.get(`novelIds${novel.seriesId}`) || "[]");
+        let novelIds = JSON.parse(
+            cache.get(`novelIds${novel.seriesId}`) || "[]",
+        );
         novel.id = novelIds[book.durChapterIndex];
         novel.title = book.durChapterTitle;
 
@@ -85,12 +87,13 @@ export function getContent(res: any) {
     }
 
     // 获取 [uploadedimage:] 的图片链接
-    let hasEmbeddedImages = res.textEmbeddedImages !== undefined && res.textEmbeddedImages !== null;
+    let hasEmbeddedImages =
+        res.textEmbeddedImages !== undefined && res.textEmbeddedImages !== null;
     if (hasEmbeddedImages) {
-        Object.keys(res.textEmbeddedImages).forEach((key) => {
+        Object.keys(res.textEmbeddedImages).forEach(key => {
             content = content.replace(
                 `[uploadedimage:${key}]`,
-                `<img src="${urlCoverUrl(res.textEmbeddedImages[key].urls.original)}">`
+                `<img src="${urlCoverUrl(res.textEmbeddedImages[key].urls.original)}">`,
             );
         });
     }
@@ -98,7 +101,7 @@ export function getContent(res: any) {
     // 获取 [pixivimage:] 的图片链接 [pixivimage:1234] [pixivimage:1234-1]
     let matched = content.match(RegExp(/\[pixivimage:(\d+)-?(\d+)]/gm));
     if (matched) {
-        matched.forEach((pixivimage) => {
+        matched.forEach(pixivimage => {
             let matched2,
                 illustId,
                 order = 0;
@@ -112,7 +115,7 @@ export function getContent(res: any) {
             }
             content = content.replace(
                 `${pixivimage}`,
-                `<img src="${urlIllustOriginal(illustId, order)}">`
+                `<img src="${urlIllustOriginal(illustId, order)}">`,
             );
         });
     }
@@ -121,7 +124,10 @@ export function getContent(res: any) {
     matched = content.match(RegExp(/[ 　]*\[newpage][ 　]*/gm));
     if (matched) {
         for (let i in matched) {
-            content = content.replace(`${matched[i]}`, `${"<p>​<p/>".repeat(3)}`);
+            content = content.replace(
+                `${matched[i]}`,
+                `${"<p>​<p/>".repeat(3)}`,
+            );
         }
     }
 
@@ -157,7 +163,10 @@ export function getContent(res: any) {
             if (urlLink === urlName) {
                 content = content.replace(`${matchedText}`, `${urlName}`);
             } else {
-                content = content.replace(`${matchedText}`, `${urlName}: ${urlLink}`);
+                content = content.replace(
+                    `${matchedText}`,
+                    `${urlName}: ${urlLink}`,
+                );
             }
         }
     }
@@ -173,16 +182,25 @@ export function getContent(res: any) {
 
             if (!util.settings.REPLACE_TITLE_MARKS) {
                 // 默认替换成（括号）
-                content = content.replace(`${matchedText}`, `${kanji}（${kana}）`);
+                content = content.replace(
+                    `${matchedText}`,
+                    `${kanji}（${kana}）`,
+                );
             } else {
                 let reg = RegExp("[\\u4E00-\\u9FFF]+", "g");
                 if (reg.test(kana)) {
                     // kana为中文，则替换回《书名号》
-                    content = content.replace(`${matchedText}`, `${kanji}《${kana}》`);
+                    content = content.replace(
+                        `${matchedText}`,
+                        `${kanji}《${kana}》`,
+                    );
                 } else {
                     // 阅读不支持 <ruby> <rt> 注音
                     // content = content.replace(`${matchedText}`, `<ruby>${kanji}<rt>${kana}</rt></ruby>`)
-                    content = content.replace(`${matchedText}`, `${kanji}（${kana}）`);
+                    content = content.replace(
+                        `${matchedText}`,
+                        `${kanji}（${kana}）`,
+                    );
                 }
             }
         }
@@ -240,23 +258,29 @@ function checkContent() {
         java.log(JSON.stringify(latestMsg));
     } else if (latestMsg.body.total >= 1) {
         let msg = latestMsg.body.message_threads.filter(
-            (item: any) => item.thread_name === "pixiv事務局"
+            (item: any) => item.thread_name === "pixiv事務局",
         )[0];
         if (msg === undefined) {
             sleepToast(
                 `您于 ${java.timeFormat(new Date().getTime())} 触发 Pixiv 【请求限制】，建议稍候/重新登录再继续`,
-                3
+                3,
             );
             // java.startBrowser("https://www.pixiv.net", '退出登录')
             // java.startBrowser("https://www.pixiv.net/logout.php",'退出登录')  // 不清除 WebView 缓存无法重新登录
-        } else if (new Date().getTime() - 1000 * msg.modified_at <= 3 * 24 * 60 * 60 * 1000) {
+        } else if (
+            new Date().getTime() - 1000 * msg.modified_at <=
+            3 * 24 * 60 * 60 * 1000
+        ) {
             // 3*24h内提醒
             sleepToast(
                 `您于 ${java.timeFormat(1000 * msg.modified_at)} 触发 Pixiv 【过度访问】，请修改密码并重新登录`,
-                3
+                3,
             );
             sleepToast(`${msg.latest_content}`, 5);
-            java.startBrowser("https://accounts.pixiv.net/password/change", "修改密码");
+            java.startBrowser(
+                "https://accounts.pixiv.net/password/change",
+                "修改密码",
+            );
         }
     }
 }

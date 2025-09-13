@@ -115,7 +115,9 @@ function handlerBookMarks() {
 function handlerFollowLatest() {
     return () => {
         let res = JSON.parse(result);
-        return util.formatNovels(util.handNovels(util.combineNovels(res.body.thumbnails.novel)));
+        return util.formatNovels(
+            util.handNovels(util.combineNovels(res.body.thumbnails.novel)),
+        );
     };
 }
 
@@ -123,7 +125,9 @@ function handlerFollowLatest() {
 function handlerDiscovery() {
     return () => {
         let res = JSON.parse(result);
-        return util.formatNovels(util.handNovels(util.combineNovels(res.body.novels)));
+        return util.formatNovels(
+            util.handNovels(util.combineNovels(res.body.novels)),
+        );
     };
 }
 
@@ -131,7 +135,9 @@ function handlerDiscovery() {
 function handlerSearch() {
     return () => {
         let res = JSON.parse(result);
-        return util.formatNovels(util.handNovels(util.combineNovels(res.body.novel.data)));
+        return util.formatNovels(
+            util.handNovels(util.combineNovels(res.body.novel.data)),
+        );
     };
 }
 
@@ -139,7 +145,9 @@ function handlerSearch() {
 function handlerWatchList() {
     return () => {
         let res = JSON.parse(result);
-        return util.formatNovels(util.handNovels(res.body.thumbnails.novelSeries));
+        return util.formatNovels(
+            util.handNovels(res.body.thumbnails.novelSeries),
+        );
     };
 }
 
@@ -186,7 +194,7 @@ function handlerRankingWebview() {
         // java.log(JSON.stringify(novelIds))
         let userNovels = getWebviewJson(
             urlNovelsDetailed(`${cache.get("pixiv:uid")}`, novelIds),
-            (html) => {
+            html => {
                 if (!html) {
                     return "";
                 }
@@ -195,9 +203,11 @@ function handlerRankingWebview() {
                     return "";
                 }
                 return match[0].replace(">", "").replace("<", "");
-            }
+            },
         ).body;
-        return util.formatNovels(util.handNovels(util.combineNovels(Object.values(userNovels))));
+        return util.formatNovels(
+            util.handNovels(util.combineNovels(Object.values(userNovels))),
+        );
     };
 }
 

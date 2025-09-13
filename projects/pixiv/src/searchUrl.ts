@@ -26,7 +26,9 @@ if (keyword.startsWith("@") || keyword.startsWith("＠")) {
         let tags = keyword.replace(author, "").trim().slice(1);
         java.put("keyword", author);
         java.put("inputTags", tags);
-        java.log(`👤 搜索作者：${author} #️⃣ 过滤标签：${tags.replace(" ", "、")}`);
+        java.log(
+            `👤 搜索作者：${author} #️⃣ 过滤标签：${tags.replace(" ", "、")}`,
+        );
     } else {
         java.put("keyword", keyword);
         java.log(`👤 搜索作者：${keyword.slice(1)}`);

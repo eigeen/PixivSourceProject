@@ -1,9 +1,9 @@
 {
-  "compilerOptions": {
-    "declaration": true,
-    "declarationDir": "dist/@types",
-    "outDir": "dist"
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules"]
+    "compilerOptions": {
+        "declaration": true,
+        "declarationDir": "dist/@types",
+        "outDir": "dist"
+    },
+    "include": ["src/**/*"],
+    "exclude": ["node_modules"]
 }

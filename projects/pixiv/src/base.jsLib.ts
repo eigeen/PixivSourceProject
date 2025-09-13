@@ -7,7 +7,11 @@
 
 export const cacheSaveSeconds = 7 * 24 * 60 * 60; // 缓存时间7天
 
-export function cacheGetAndSet<T>(cache: CacheManager, key: string, supplyFunc: () => T): T {
+export function cacheGetAndSet<T>(
+    cache: CacheManager,
+    key: string,
+    supplyFunc: () => T,
+): T {
     let v = cache.get(key);
     if (v === undefined || v === null) {
         v = JSON.stringify(supplyFunc());
@@ -16,7 +20,11 @@ export function cacheGetAndSet<T>(cache: CacheManager, key: string, supplyFunc: 
     return JSON.parse(v);
 }
 
-export function putInCache(objectName: string, object: any, saveSeconds?: number) {
+export function putInCache(
+    objectName: string,
+    object: any,
+    saveSeconds?: number,
+) {
     // @ts-ignore
     const { java, cache }: { java: JavaExt; cache: CacheManager } = this;
     if (object === undefined) object = null;
@@ -80,13 +88,16 @@ export function getAjaxJson(url: string, forceUpdate: boolean = false): any {
     });
 }
 
-export function getAjaxAllJson(urls: string[], forceUpdate: boolean = false): any[] {
+export function getAjaxAllJson(
+    urls: string[],
+    forceUpdate: boolean = false,
+): any[] {
     // @ts-ignore
     const { java, cache }: { java: JavaExt; cache: CacheManager } = this;
 
     const cacheKey = urls.join(",");
     if (forceUpdate === true) {
-        const result = java.ajaxAll(urls).map((resp) => JSON.parse(resp.body()));
+        const result = java.ajaxAll(urls).map(resp => JSON.parse(resp.body()));
         cache.put(cacheKey, JSON.stringify(result), cacheSaveSeconds);
         for (const i in urls) {
             cache.put(urls[i]!, JSON.stringify(result[i]), cacheSaveSeconds);
@@ -96,7 +107,7 @@ export function getAjaxAllJson(urls: string[], forceUpdate: boolean = false): an
     }
 
     return cacheGetAndSet(cache, cacheKey, () => {
-        const result = java.ajaxAll(urls).map((resp) => JSON.parse(resp.body()));
+        const result = java.ajaxAll(urls).map(resp => JSON.parse(resp.body()));
         cache.put(cacheKey, JSON.stringify(result), cacheSaveSeconds);
         for (const i in urls) {
             cache.put(urls[i]!, JSON.stringify(result[i]), cacheSaveSeconds);
@@ -105,7 +116,10 @@ export function getAjaxAllJson(urls: string[], forceUpdate: boolean = false): an
     });
 }
 
-export function getWebviewJson(url: string, parseFunc: (html: string | null) => string): any {
+export function getWebviewJson(
+    url: string,
+    parseFunc: (html: string | null) => string,
+): any {
     // @ts-ignore
     const { java, cache }: { java: JavaExt; cache: CacheManager } = this;
 
@@ -123,19 +137,29 @@ export function urlNovelDetailed(novelId: string | number): string {
     return `https://www.pixiv.net/ajax/novel/${novelId}`;
 }
 
-export function urlNovelsDetailed(userId: string | number, nidList: (string | number)[]): string {
-    return `https://www.pixiv.net/ajax/user/${userId}/novels?${nidList.map((v) => "ids[]=" + v).join("&")}`;
+export function urlNovelsDetailed(
+    userId: string | number,
+    nidList: (string | number)[],
+): string {
+    return `https://www.pixiv.net/ajax/user/${userId}/novels?${nidList.map(v => "ids[]=" + v).join("&")}`;
 }
 
 export function urlNovelBookmarkData(novelId: string | number) {
     return `https://www.pixiv.net/ajax/novel/${novelId}/bookmarkData`;
 }
 
-export function urlNovelComments(novelId: string | number, offset: number, limit: number) {
+export function urlNovelComments(
+    novelId: string | number,
+    offset: number,
+    limit: number,
+) {
     return `https://www.pixiv.net/ajax/novels/comments/roots?novel_id=${novelId}&offset=${offset}&limit=${limit}&lang=zh`;
 }
 
-export function urlNovelCommentsReply(commentId: string | number, page: number) {
+export function urlNovelCommentsReply(
+    commentId: string | number,
+    page: number,
+) {
     return `https://www.pixiv.net/ajax/novels/comments/replies?comment_id=${commentId}&page=${page}&lang=zh`;
 }
 
@@ -151,7 +175,11 @@ export function urlSeriesNovelsTitles(seriesId: string | number): string {
     return `https://www.pixiv.net/ajax/novel/series/${seriesId}/content_titles`;
 }
 
-export function urlSeriesNovels(seriesId: string | number, limit: number, offset: number): string {
+export function urlSeriesNovels(
+    seriesId: string | number,
+    limit: number,
+    offset: number,
+): string {
     if (limit > 30) limit = 30;
     if (limit < 10) limit = 10;
     return `https://www.pixiv.net/ajax/novel/series_content/${seriesId}?limit=${limit}&last_order=${offset}&order_by=asc&lang=zh`;
@@ -173,7 +201,10 @@ export function urlUserAllWorks(userId: string | number): string {
     return `https://www.pixiv.net/ajax/user/${userId}/profile/all?lang=zh`;
 }
 
-export function urlSearchNovel(novelName: string, page: number | string): string {
+export function urlSearchNovel(
+    novelName: string,
+    page: number | string,
+): string {
     return `https://www.pixiv.net/ajax/search/novels/${encodeURI(novelName)}?word=${encodeURI(novelName)}&order=date_d&mode=all&p=${page}&s_mode=s_tag&lang=zh`;
 }
 
@@ -198,7 +229,10 @@ export function urlIllustDetailed(illustId: string | number): string {
     return `https://www.pixiv.net/ajax/illust/${illustId}?lang=zh`;
 }
 
-export function urlIllustOriginal(illustId: string | number, order: number): string {
+export function urlIllustOriginal(
+    illustId: string | number,
+    order: number,
+): string {
     // @ts-ignore
     const { java, cache }: { java: JavaExt; cache: CacheManager } = this;
 
@@ -211,11 +245,15 @@ export function urlIllustOriginal(illustId: string | number, order: number): str
 }
 
 export function urlEmojiUrl(emojiId: string | number) {
-    return urlCoverUrl(`https://s.pximg.net/common/images/emoji/${emojiId}.png`);
+    return urlCoverUrl(
+        `https://s.pximg.net/common/images/emoji/${emojiId}.png`,
+    );
 }
 
 export function urlStampUrl(stampId: string | number) {
-    return urlCoverUrl(`https://s.pximg.net/common/images/stamp/generated-stamps/${stampId}_s.jpg`);
+    return urlCoverUrl(
+        `https://s.pximg.net/common/images/stamp/generated-stamps/${stampId}_s.jpg`,
+    );
 }
 
 export function urlMessageThreadLatest(max: number): string {
@@ -223,7 +261,10 @@ export function urlMessageThreadLatest(max: number): string {
     return `https://www.pixiv.net/rpc/index.php?mode=latest_message_threads2&num=${max}&lang=zh`;
 }
 
-export function urlMessageThreadContents(threadId: string | number, max: number): string {
+export function urlMessageThreadContents(
+    threadId: string | number,
+    max: number,
+): string {
     return `https://www.pixiv.net/rpc/index.php?mode=message_thread_contents&thread_id=${threadId}&num=${max}`;
 }
 
@@ -295,7 +336,8 @@ export function updateSource() {
         index = 0;
     if (source.bookSourceUrl.includes("pixiv")) sourceName = "pixiv";
     else if (source.bookSourceUrl.includes("furrynovel")) sourceName = "linpx";
-    sourceNameCapitalize = sourceName[0].toUpperCase() + sourceName.substring(1);
+    sourceNameCapitalize =
+        sourceName[0].toUpperCase() + sourceName.substring(1);
 
     if (source.bookSourceName.includes("备用")) index = 1;
     else if (source.bookSourceName.includes("漫画")) index = 2;
@@ -312,7 +354,7 @@ export function updateSource() {
                     "User-Agent": "Mozilla/5.0 (Linux; Android 14)",
                     "X-Requested-With": "XMLHttpRequest",
                 })
-                .body()
+                .body(),
         )[index];
     } catch (e) {
         try {
@@ -323,7 +365,7 @@ export function updateSource() {
                         "User-Agent": "Mozilla/5.0 (Linux; Android 14)",
                         "X-Requested-With": "XMLHttpRequest",
                     })
-                    .body()
+                    .body(),
             )[index];
         } catch (e) {
             onlineSource = {
@@ -403,7 +445,10 @@ export function updateSource() {
     </table>
 </body>
 </html>`;
-    java.startBrowser(`data:text/html;charset=utf-8;base64, ${java.base64Encode(htm)}`, "更新书源");
+    java.startBrowser(
+        `data:text/html;charset=utf-8;base64, ${java.base64Encode(htm)}`,
+        "更新书源",
+    );
     return [];
 }
 
@@ -412,38 +457,38 @@ export function updateSource() {
  * @returns Map<string, string> 用户ID到用户名的映射
  */
 export function getLikeAuthorsMap(): Map<string, string> {
-  // @ts-ignore
-  const { cache }: { cache: CacheManager } = this;
+    // @ts-ignore
+    const { cache }: { cache: CacheManager } = this;
 
-  const cached = cache.get("likeAuthors");
-  const likeAuthorsMap = new Map<string, string>();
+    const cached = cache.get("likeAuthors");
+    const likeAuthorsMap = new Map<string, string>();
 
-  if (cached === null || cached === undefined) {
-    return likeAuthorsMap;
-  }
-
-  let parsedData: any;
-  try {
-    parsedData = JSON.parse(cached);
-  } catch (e) {
-    return likeAuthorsMap;
-  }
-
-  // 处理新格式：数组形式 [{'key1': 'value1'}, {'key2': 'value2'}]
-  if (Array.isArray(parsedData)) {
-    parsedData.forEach((item: any) => {
-      for (const key in item) {
-        likeAuthorsMap.set(key, item[key]);
-      }
-    });
-  } else {
-    // 兼容旧格式：对象形式 {'key1': 'value1', 'key2': 'value2'}
-    for (const key in parsedData) {
-      likeAuthorsMap.set(key, parsedData[key]);
+    if (cached === null || cached === undefined) {
+        return likeAuthorsMap;
     }
-  }
 
-  return likeAuthorsMap;
+    let parsedData: any;
+    try {
+        parsedData = JSON.parse(cached);
+    } catch (e) {
+        return likeAuthorsMap;
+    }
+
+    // 处理新格式：数组形式 [{'key1': 'value1'}, {'key2': 'value2'}]
+    if (Array.isArray(parsedData)) {
+        parsedData.forEach((item: any) => {
+            for (const key in item) {
+                likeAuthorsMap.set(key, item[key]);
+            }
+        });
+    } else {
+        // 兼容旧格式：对象形式 {'key1': 'value1', 'key2': 'value2'}
+        for (const key in parsedData) {
+            likeAuthorsMap.set(key, parsedData[key]);
+        }
+    }
+
+    return likeAuthorsMap;
 }
 
 /**
@@ -451,16 +496,16 @@ export function getLikeAuthorsMap(): Map<string, string> {
  * @param likeAuthorsMap 用户ID到用户名的映射
  */
 export function saveLikeAuthorsMap(likeAuthorsMap: Map<string, string>): void {
-  // @ts-ignore
-  const { cache }: { cache: CacheManager } = this;
+    // @ts-ignore
+    const { cache }: { cache: CacheManager } = this;
 
-  const orderedArray: Array<Record<string, string>> = [];
+    const orderedArray: Array<Record<string, string>> = [];
 
-  likeAuthorsMap.forEach((userName, userId) => {
-    const item: Record<string, string> = {};
-    item[userId] = userName;
-    orderedArray.push(item);
-  });
+    likeAuthorsMap.forEach((userName, userId) => {
+        const item: Record<string, string> = {};
+        item[userId] = userName;
+        orderedArray.push(item);
+    });
 
-  cache.put("likeAuthors", JSON.stringify(orderedArray));
+    cache.put("likeAuthors", JSON.stringify(orderedArray));
 }
