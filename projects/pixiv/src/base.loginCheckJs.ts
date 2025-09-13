@@ -40,10 +40,6 @@ function isSourceRead() {
     return isSourceReadStatus;
 }
 
-function sleepToastWithDefault(msg: string, duration: number = 0) {
-    sleepToast(msg, duration);
-}
-
 // 检测过度访问
 function checkMessageThread(checkTimes?: number) {
     if (checkTimes === undefined) {
@@ -209,7 +205,7 @@ function ConstructUtil(): Util {
             util.getCsrfToken();
         } else {
             java.log(resp.code());
-            sleepToastWithDefault("⚠️ 登录失败");
+            sleepToast("⚠️ 登录失败");
         }
     };
 
@@ -217,7 +213,7 @@ function ConstructUtil(): Util {
         util.removeCookie();
         java.startBrowser("https://www.pixiv.net/logout.php", "退出账号");
         util.removeCookie();
-        sleepToastWithDefault(
+        sleepToast(
             `✅ 已退出当前账号\n\n退出后请点击右上角的 ✔️ 退出\n\n登录请点击【登录账号】进行登录`,
         );
     };
@@ -234,7 +230,7 @@ function ConstructUtil(): Util {
             return pixivCookie;
         } else {
             cache.delete("pixivCookie");
-            sleepToastWithDefault("未登录账号(pixivCookie)");
+            sleepToast("未登录账号(pixivCookie)");
             return null;
         }
     };
@@ -263,7 +259,7 @@ function ConstructUtil(): Util {
                 csrfToken = html!.match(/token\\":\\"([a-z0-9]{32})/)![1];
             } catch (e) {
                 csrfToken = null;
-                sleepToastWithDefault("未登录账号(csrfToken)");
+                sleepToast("未登录账号(csrfToken)");
             }
             java.log(typeof csrfToken);
             java.log(csrfToken);

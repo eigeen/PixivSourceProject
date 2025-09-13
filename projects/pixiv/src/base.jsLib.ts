@@ -314,7 +314,7 @@ export function sleep(time: number): void {
     }
 }
 
-export function sleepToast(text: string, second: number): void {
+export function sleepToast(text: string, second?: number): void {
     // @ts-ignore
     const { java }: { java: JavaExt } = this;
 

@@ -28,9 +28,9 @@ import {
 } from "./base.jsLib";
 
 export function login(): boolean {
-    sleepToastWithDefault("🔄 正在检测登陆状态，请稍候");
+    sleepToast("🔄 正在检测登陆状态，请稍候");
     if (isLogin()) {
-        sleepToastWithDefault(
+        sleepToast(
             "️🅿️ 登录账号\n✅ 已经登录过账号了\n\n可以点击【🔙 退出账号】来切换账号",
         );
         return false;
@@ -48,7 +48,7 @@ export function login(): boolean {
         return true;
     } else {
         java.log(resp.code());
-        sleepToastWithDefault("🅿️ 登录账号\n\n⚠️ 登录失败");
+        sleepToast("🅿️ 登录账号\n\n⚠️ 登录失败");
         return false;
     }
 }
@@ -59,7 +59,7 @@ export function logout() {
     removeCookie();
     removeLikeDataCache();
     removeSettingsCache();
-    sleepToastWithDefault(
+    sleepToast(
         `✅ 已退出当前账号\n\n退出后请点击右上角的 ✔️ 退出\n\n登录请点击【登录账号】进行登录`,
     );
 }
@@ -125,7 +125,7 @@ export function getCookie(): string | null {
         return pixivCookie;
     } else {
         cache.delete("pixivCookie");
-        sleepToastWithDefault("未登录账号(pixivCookie)");
+        sleepToast("未登录账号(pixivCookie)");
         return null;
     }
 }
@@ -151,15 +151,13 @@ export function getPostBody(
     try {
         return JSON.parse(java.post(url, body, headers).body());
     } catch (e) {
-        // sleepToastWithDefault(e)
-        // sleepToastWithDefault(JSON.stringify(headers))
-        if (String(e).includes("400"))
-            sleepToastWithDefault(`⚠️ 缺少 headers`, 1);
+        // sleepToast(e)
+        // sleepToast(JSON.stringify(headers))
+        if (String(e).includes("400")) sleepToast(`⚠️ 缺少 headers`, 1);
         else if (String(e).includes("403"))
-            sleepToastWithDefault(`⚠️ 缺少 cookie 或 cookie 过期`, 1);
-        else if (String(e).includes("404")) sleepToastWithDefault(`⚠️ 404`, 1);
-        else if (String(e).includes("422"))
-            sleepToastWithDefault(`⚠️ 请求信息有误`, 1);
+            sleepToast(`⚠️ 缺少 cookie 或 cookie 过期`, 1);
+        else if (String(e).includes("404")) sleepToast(`⚠️ 404`, 1);
+        else if (String(e).includes("422")) sleepToast(`⚠️ 请求信息有误`, 1);
         return { error: true };
     }
 }
@@ -176,12 +174,12 @@ export function novelBookmarkAdd(restrict = 0) {
         }),
     );
     if (resp.error === true)
-        sleepToastWithDefault(`❤️ 收藏小说\n\n⚠️ 收藏【${novel.title}】失败`);
+        sleepToast(`❤️ 收藏小说\n\n⚠️ 收藏【${novel.title}】失败`);
     else if (resp.body === null)
-        sleepToastWithDefault(`❤️ 收藏小说\n\n✅ 已经收藏【${novel.title}】了`);
+        sleepToast(`❤️ 收藏小说\n\n✅ 已经收藏【${novel.title}】了`);
     else {
         cache.put(`collect${novel.id}`, resp.body);
-        sleepToastWithDefault(`❤️ 收藏小说\n\n✅ 已收藏【${novel.title}】`);
+        sleepToast(`❤️ 收藏小说\n\n✅ 已收藏【${novel.title}】`);
 
         let likeNovels = getFromCache("likeNovels");
         likeNovels.push(Number(novel.id));
@@ -209,12 +207,10 @@ export function novelBookmarkDelete() {
         `del=1&book_id=${getNovelBookmarkId(novel.id)}`,
     );
     if (resp.error === true)
-        sleepToastWithDefault(
-            `❤️ 收藏小说\n\n⚠️ 取消收藏【${novel.title}】失败`,
-        );
+        sleepToast(`❤️ 收藏小说\n\n⚠️ 取消收藏【${novel.title}】失败`);
     else {
         cache.delete(`collect${novel.id}`);
-        sleepToastWithDefault(`❤️ 收藏小说\n\n✅ 已取消收藏【${novel.title}】`);
+        sleepToast(`❤️ 收藏小说\n\n✅ 已取消收藏【${novel.title}】`);
 
         let likeNovels = getFromCache("likeNovels");
         likeNovels = likeNovels.filter(
@@ -238,9 +234,9 @@ export function novelsBookmarkDelete(novelIds: (string | number)[]) {
         JSON.stringify({ bookmarkIds: bookmarkIds }),
     );
     if (resp.error === true)
-        sleepToastWithDefault("❤️ 收藏小说\n\n⚠️ 全部取消收藏失败", 1);
+        sleepToast("❤️ 收藏小说\n\n⚠️ 全部取消收藏失败", 1);
     else {
-        sleepToastWithDefault("✅ 已取消收藏");
+        sleepToast("✅ 已取消收藏");
         novelIds.forEach(novelId => {
             cache.delete(`collect${novelId}`);
         });
@@ -262,12 +258,12 @@ export function novelsBookmarkDelete(novelIds: (string | number)[]) {
 export function novelsBookmarkAdd() {
     const novel = getNovel();
     if (!novel.seriesId) {
-        sleepToastWithDefault(
+        sleepToast(
             `❤️ 收藏系列\n\n⚠️ 【${novel.title}】非系列小说，现已收藏本篇小说`,
         );
         return novelBookmarkAdd(0);
     } else {
-        sleepToastWithDefault(
+        sleepToast(
             `❤️ 收藏系列\n\n🔄 正在收藏系列【${novel.seriesTitle}】，请稍后……`,
             2,
         );
@@ -291,9 +287,7 @@ export function novelsBookmarkAdd() {
             );
 
             if (resp.error === true)
-                sleepToastWithDefault(
-                    `❤️ 收藏系列\n\n⚠️ 收藏【${novelId}】失败`,
-                );
+                sleepToast(`❤️ 收藏系列\n\n⚠️ 收藏【${novelId}】失败`);
             else if (resp.body === null) {
             } else {
                 cache.put(`collect${novelId}`, resp.body);
@@ -310,9 +304,7 @@ export function novelsBookmarkAdd() {
         }
     });
     putInCache("likeNovels", likeNovels);
-    sleepToastWithDefault(
-        `❤️ 收藏系列\n\n✅ 已经收藏【${novel.seriesTitle}】全部章节`,
-    );
+    sleepToast(`❤️ 收藏系列\n\n✅ 已经收藏【${novel.seriesTitle}】全部章节`);
 }
 
 export function novelBookmarkFactory(code: number) {
@@ -337,14 +329,13 @@ export function novelMarker(page = 1) {
     java.log(
         `mode=save&i_id=${novel.id}&u_id=${getFromCache("pixiv:uid")}&page=${page}`,
     );
-    if (resp.error === true)
-        sleepToastWithDefault("🏷️ 添加书签\n\n⚠️ 操作失败", 1);
+    if (resp.error === true) sleepToast("🏷️ 添加书签\n\n⚠️ 操作失败", 1);
     else if (lastMarker === true) {
         cache.put(`marker${novel.id}`, false);
-        sleepToastWithDefault(`🏷️ 添加书签\n\n✅ 已删除书签`);
+        sleepToast(`🏷️ 添加书签\n\n✅ 已删除书签`);
     } else {
         cache.put(`marker${novel.id}`, true);
-        sleepToastWithDefault(`🏷️ 添加书签\n\n✅ 已加入书签`);
+        sleepToast(`🏷️ 添加书签\n\n✅ 已加入书签`);
     }
 }
 
@@ -355,15 +346,10 @@ export function seriesWatch() {
         "{}",
     );
     if (resp.error === true)
-        sleepToastWithDefault(
-            `📃 追更系列\n\n⚠️ 追更【${novel.seriesTitle}】失败`,
-            1,
-        );
+        sleepToast(`📃 追更系列\n\n⚠️ 追更【${novel.seriesTitle}】失败`, 1);
     else {
         cache.put(`watch${novel.seriesId}`, true);
-        sleepToastWithDefault(
-            `📃 追更系列\n\n✅ 已追更【${novel.seriesTitle}】`,
-        );
+        sleepToast(`📃 追更系列\n\n✅ 已追更【${novel.seriesTitle}】`);
 
         let watchedSeries = getFromCache("watchedSeries");
         watchedSeries.push(Number(novel.seriesId));
@@ -386,15 +372,10 @@ export function seriesUnWatch() {
         "{}",
     );
     if (resp.error === true)
-        sleepToastWithDefault(
-            `📃 追更系列\n\n⚠️ 取消追更【${novel.seriesTitle}】失败`,
-            1,
-        );
+        sleepToast(`📃 追更系列\n\n⚠️ 取消追更【${novel.seriesTitle}】失败`, 1);
     else {
         cache.delete(`watch${novel.seriesId}`);
-        sleepToastWithDefault(
-            `📃 追更系列\n\n✅ 已取消追更【${novel.seriesTitle}】`,
-        );
+        sleepToast(`📃 追更系列\n\n✅ 已取消追更【${novel.seriesTitle}】`);
 
         let watchedSeries = getFromCache("watchedSeries");
         watchedSeries = watchedSeries.filter(
@@ -415,7 +396,7 @@ export function seriesUnWatch() {
 export function seriesWatchFactory(code = 1) {
     const novel = getNovel();
     if (!novel.seriesId) {
-        return sleepToastWithDefault(
+        return sleepToast(
             `📃 追更系列\n\n⚠️ 【${novel.title}】非系列小说，无法加入追更列表`,
         );
     }
@@ -433,12 +414,9 @@ export function userFollow(restrict = 0) {
         `mode=add&type=user&user_id=${novel.userId}&tag=""&restrict=${restrict}&format=json`,
     );
     if (resp.error === true)
-        sleepToastWithDefault(
-            `⭐️ 关注作者\n\n⚠️ 关注【${novel.userName}】失败`,
-            1,
-        );
+        sleepToast(`⭐️ 关注作者\n\n⚠️ 关注【${novel.userName}】失败`, 1);
     else {
-        sleepToastWithDefault(`⭐️ 关注作者\n\n✅ 已关注【${novel.userName}】`);
+        sleepToast(`⭐️ 关注作者\n\n✅ 已关注【${novel.userName}】`);
         cache.put(`follow${novel.userId}`, true);
     }
 }
@@ -450,14 +428,9 @@ export function userUnFollow() {
         `mode=del&type=bookuser&id=${novel.userId}`,
     );
     if (resp.error === true)
-        sleepToastWithDefault(
-            `⭐️ 关注作者\n\n⚠️ 取消关注【${novel.userName}】失败`,
-            1,
-        );
+        sleepToast(`⭐️ 关注作者\n\n⚠️ 取消关注【${novel.userName}】失败`, 1);
     else {
-        sleepToastWithDefault(
-            `⭐️ 关注作者\n\n✅ 已取消关注【${novel.userName}】`,
-        );
+        sleepToast(`⭐️ 关注作者\n\n✅ 已取消关注【${novel.userName}】`);
         cache.delete(`follow${novel.userId}`);
     }
 }
@@ -482,15 +455,15 @@ export function userBlackList() {
         JSON.stringify({ user_id: novel.userId, action: action }),
     );
     // java.log(JSON.stringify({"user_id": novel.userId, "action": action}))
-    if (resp.error === true) sleepToastWithDefault("⚠️ 操作失败", 1);
+    if (resp.error === true) sleepToast("⚠️ 操作失败", 1);
     else if (lastStatus === true) {
         cache.put(`block${novel.userId}`, false);
-        sleepToastWithDefault(
+        sleepToast(
             `✅ 已取消拉黑【${novel.userName}】\n\n已允许其点赞、评论、收藏、关注、私信等`,
         );
     } else {
         cache.put(`block${novel.userId}`, true);
-        sleepToastWithDefault(
+        sleepToast(
             `✅ 已拉黑【${novel.userName}】(Pixiv)\n\n已禁止其点赞、评论、收藏、关注、私信等`,
         );
     }
@@ -501,18 +474,18 @@ export function userBlock() {
     const novel = getNovel();
     if (authors.includes(Number(novel.userId))) {
         authors = authors.filter(author => author !== Number(novel.userId));
-        sleepToastWithDefault(
+        sleepToast(
             `🚫 屏蔽作者\n\n✅ 已取消屏蔽【${novel.userName}】\n现已恢复显示其小说`,
         );
     } else if (novel.userId !== undefined && novel.userId !== null) {
         authors.push(Number(novel.userId));
-        sleepToastWithDefault(
+        sleepToast(
             `🚫 屏蔽作者\n\n✅ 本地已屏蔽【${novel.userName}】\n今后不再显示其小说`,
         );
     }
     putInCache("blockAuthorList", authors);
     source.setVariable(authors.toString());
-    // sleepToastWithDefault(JSON.stringify(authors))
+    // sleepToast(JSON.stringify(authors))
 }
 
 export function novelCommentAdd() {
@@ -521,7 +494,7 @@ export function novelCommentAdd() {
     let userId = getFromCache("pixiv:uid");
     let comment = String(result.get("发送评论")).trim();
     if (comment === "") {
-        return sleepToastWithDefault(
+        return sleepToast(
             `✅ 发送评论\n⚠️ 请输入需要发送的评论\n\n输入【评论内容；评论ID】可回复该条评论，如【非常喜欢；123456】\n\n📌 当前章节：${novel.title}\n\n如非当前章节，请刷新正文`,
         );
     }
@@ -541,10 +514,9 @@ export function novelCommentAdd() {
         );
     }
 
-    if (resp.error === true)
-        sleepToastWithDefault("✅ 发送评论\n\n⚠️ 评论失败", 1);
+    if (resp.error === true) sleepToast("✅ 发送评论\n\n⚠️ 评论失败", 1);
     else
-        sleepToastWithDefault(
+        sleepToast(
             `✅ 发送评论\n\n✅ 已在【${novel.title}】发布评论：\n${comment}`,
         );
 }
@@ -577,7 +549,7 @@ export function novelCommentDelete() {
     const novel = getNovel();
     let comment = String(result.get("发送评论")).trim();
     if (comment === "") {
-        return sleepToastWithDefault(
+        return sleepToast(
             `🗑 删除评论\n⚠️ 请输入需要删除的【评论ID】\n或输入需要删除的【评论内容】\n\n📌 当前章节：${novel.title}\n\n如非当前章节，请刷新正文`,
         );
     }
@@ -589,7 +561,7 @@ export function novelCommentDelete() {
         commentIDs = getNovelCommentID(novel.id, comment);
         java.log(JSON.stringify(commentIDs));
         if (commentIDs.length === 0) {
-            return sleepToastWithDefault(
+            return sleepToast(
                 `🗑 删除评论\n\n⚠️ 未能找到这条评论\n请检查是否有错别字或标点符号是否一致`,
             );
         }
@@ -602,9 +574,9 @@ export function novelCommentDelete() {
         );
         // java.log(JSON.stringify(resp))
         if (resp.error === true)
-            sleepToastWithDefault("🗑 删除评论\n\n⚠️ 评论删除失败", 1);
+            sleepToast("🗑 删除评论\n\n⚠️ 评论删除失败", 1);
         else
-            sleepToastWithDefault(
+            sleepToast(
                 `🗑 删除评论\n\n✅ 已在【${novel.title}】删除评论：\n${comment}`,
             );
     });
@@ -627,10 +599,7 @@ export function blockWordShow() {
 
     let words = getFromCache(`${key}BlockWords`);
     if (words === undefined) words = [];
-    sleepToastWithDefault(
-        `👀 查看屏蔽\n${wordsType[key]}\n\n${words.join("\n")}`,
-        5,
-    );
+    sleepToast(`👀 查看屏蔽\n${wordsType[key]}\n\n${words.join("\n")}`, 5);
 }
 
 export function blockWordAdd() {
@@ -640,17 +609,15 @@ export function blockWordAdd() {
 
     let word = String(result.get("输入内容")).trim();
     if (word === "") {
-        sleepToastWithDefault(
-            `🚫 添加屏蔽\n${wordsType[method]}\n\n⚠️ 输入内容不能为空`,
-        );
+        sleepToast(`🚫 添加屏蔽\n${wordsType[method]}\n\n⚠️ 输入内容不能为空`);
     } else if (blockWords.includes(word)) {
-        sleepToastWithDefault(
+        sleepToast(
             `🚫 添加屏蔽\n${wordsType[method]}\n\n✅ 【${word}】已经加入屏蔽列表了`,
         );
     } else {
         blockWords.push(word);
         putInCache(`${method}BlockWords`, blockWords);
-        sleepToastWithDefault(
+        sleepToast(
             `🚫 添加屏蔽\n${wordsType[method]}\n\n✅ 已将【${word}】加入屏蔽列表中`,
         );
     }
@@ -663,17 +630,15 @@ export function blockWordDelete() {
 
     let word = String(result.get("输入内容")).trim();
     if (word === "") {
-        sleepToastWithDefault(
-            `⭕️ 删除屏蔽\n${wordsType[method]}\n\n⚠️ 输入内容不能为空`,
-        );
+        sleepToast(`⭕️ 删除屏蔽\n${wordsType[method]}\n\n⚠️ 输入内容不能为空`);
     } else if (!blockWords.includes(word)) {
-        sleepToastWithDefault(
+        sleepToast(
             `⭕️ 删除屏蔽\n${wordsType[method]}\n\n⚠️ 【${word}】不在屏蔽列表\n请检查是否有错别字或标点符号是否一致`,
         );
     } else {
         blockWords = blockWords.filter((item: any) => item !== word);
         putInCache(`${method}BlockWords`, blockWords);
-        sleepToastWithDefault(
+        sleepToast(
             `⭕️ 删除屏蔽\n${wordsType[method]}\n\n✅ 已删除屏蔽词【${word}】`,
         );
     }
@@ -682,10 +647,7 @@ export function blockWordDelete() {
 export function likeTagsShow() {
     let likeTags = getFromCache(`likeTags`);
     if (likeTags === null) likeTags = [];
-    sleepToastWithDefault(
-        `👀 查看标签\n📌 喜欢标签\n\n${likeTags.join("、")}`,
-        5,
-    );
+    sleepToast(`👀 查看标签\n📌 喜欢标签\n\n${likeTags.join("、")}`, 5);
 }
 
 export function likeTagsAdd() {
@@ -694,25 +656,25 @@ export function likeTagsAdd() {
 
     let word = String(result.get("输入内容")).trim();
     if (word === "") {
-        sleepToastWithDefault(
+        sleepToast(
             `📌 添加标签\n📌 喜欢标签\n\n⚠️ 输入内容不能为空\n请直接输入标签内容`,
         );
     } else if (word.startsWith("@") || word.startsWith("＠")) {
-        sleepToastWithDefault(
+        sleepToast(
             `📌 添加标签\n📌 喜欢标签\n\n⚠️ 仅支持添加【标签】\n不支持添加 @作者名称`,
         );
     } else if (word.startsWith("#") || word.startsWith("＃")) {
-        sleepToastWithDefault(
+        sleepToast(
             `📌 添加标签\n📌 喜欢标签\n\n⚠️ 仅支持添加【标签】\n不支持添加 #标签名称`,
         );
     } else if (likeTags.includes(word)) {
-        sleepToastWithDefault(
+        sleepToast(
             `📌 添加标签\n📌 喜欢标签\n\n✅ 【${word}】已经加入喜欢标签了\n请于发现页刷新后查看`,
         );
     } else {
         likeTags.push(word);
         putInCache(`likeTags`, likeTags);
-        sleepToastWithDefault(
+        sleepToast(
             `📌 添加标签\n📌 喜欢标签\n\n✅ 已将【${word}】加入喜欢标签了\n请于发现页刷新后查看`,
         );
     }
@@ -724,15 +686,15 @@ export function likeTagsDelete() {
 
     let word = String(result.get("输入内容")).trim();
     if (word === "") {
-        sleepToastWithDefault(`🗑 删除标签\n\n⚠️ 输入内容不能为空`);
+        sleepToast(`🗑 删除标签\n\n⚠️ 输入内容不能为空`);
     } else if (!likeTags.includes(word)) {
-        sleepToastWithDefault(
+        sleepToast(
             `🗑 删除标签\n\n⚠️ 【${word}】不在喜欢标签\n请检查是否有错别字`,
         );
     } else {
         likeTags = likeTags.filter((item: any) => item !== word);
         putInCache(`likeTags`, likeTags);
-        sleepToastWithDefault(`🗑 删除标签\n\n✅ 已删除该标签【${word}】`);
+        sleepToast(`🗑 删除标签\n\n✅ 已删除该标签【${word}】`);
     }
 }
 
@@ -742,7 +704,7 @@ export function likeAuthorsShow() {
     likeAuthors.forEach((userName, userId) => {
         text += `@${userName} ${userId}\n`;
     });
-    sleepToastWithDefault(`👀 查看收藏\n❤️ 他人收藏\n\n${text.trim()}`, 5);
+    sleepToast(`👀 查看收藏\n❤️ 他人收藏\n\n${text.trim()}`, 5);
 }
 
 export function likeAuthorsAdd() {
@@ -750,11 +712,11 @@ export function likeAuthorsAdd() {
 
     let word = String(result.get("输入内容")).trim();
     if (word.startsWith("@") || word.startsWith("＠")) {
-        return sleepToastWithDefault(
+        return sleepToast(
             `❤️ 添加收藏\n❤️ 他人收藏\n\n⚠️ 仅支持通过【作者ID】关注\n不支持添加 @作者名称`,
         );
     } else if (word.startsWith("#") || word.startsWith("＃")) {
-        return sleepToastWithDefault(
+        return sleepToast(
             `❤️ 添加收藏\n❤️ 他人收藏\n\n⚠️ 仅支持通过【作者ID】关注\n不支持添加 #标签名称`,
         );
     }
@@ -764,7 +726,7 @@ export function likeAuthorsAdd() {
         let novel = getNovel();
         likeAuthors.set(novel.userId, novel.userName);
         word = `@${novel.userName} ${novel.userId}`;
-        sleepToastWithDefault(
+        sleepToast(
             `❤️ 添加收藏\n❤️ 他人收藏\n\n✅ 已将【${word}】加入收藏列表了，请于发现页刷新后查看\n\n⚠️ 输入【用户ID】可关注其他用户的收藏\n默认关注当前作者(用户)`,
             2,
         );
@@ -776,11 +738,11 @@ export function likeAuthorsAdd() {
             let user = getAjaxJson(urlUserDetailed(userId)).body;
             likeAuthors.set(user.userId, user.name);
             word = `@${user.name} ${user.userId}`;
-            sleepToastWithDefault(
+            sleepToast(
                 `❤️ 添加收藏\n❤️ 他人收藏\n\n✅ 已将【${word}】加入收藏列表了，请于发现页刷新后查看`,
             );
         } else {
-            sleepToastWithDefault(
+            sleepToast(
                 `❤️ 添加收藏\n❤️ 他人收藏\n\n⚠️ 输入【用户ID】可关注其他用户的收藏`,
                 2,
             );
@@ -794,11 +756,11 @@ export function likeAuthorsDelete() {
 
     let word = String(result.get("输入内容")).trim();
     if (word.startsWith("@") || word.startsWith("＠")) {
-        return sleepToastWithDefault(
+        return sleepToast(
             `🖤 取消收藏\n❤️ 他人收藏\n\n⚠️ 仅支持通过【作者ID】取关\n不支持输入 @作者名称`,
         );
     } else if (word.startsWith("#") || word.startsWith("＃")) {
-        return sleepToastWithDefault(
+        return sleepToast(
             `🖤 取消收藏\n❤️ 他人收藏\n\n⚠️ 仅支持通过【作者ID】取关\n不支持输入 #标签名称`,
         );
     }
@@ -807,7 +769,7 @@ export function likeAuthorsDelete() {
         let novel = getNovel();
         likeAuthors.delete(novel.userId);
         word = `@${novel.userName} ${novel.userId}`;
-        sleepToastWithDefault(
+        sleepToast(
             `🖤 取消收藏\n❤️ 他人收藏\n\n✅ 已取关【${word}】\n\n输入【用户ID】可取关其他用户\n默认取关当前作者(用户)`,
         );
     } else {
@@ -823,9 +785,7 @@ export function likeAuthorsDelete() {
             let user = getAjaxJson(urlUserDetailed(userId)).body;
             likeAuthors.delete(userId.toString());
             word = `@${user.name} ${user.userId}`;
-            sleepToastWithDefault(
-                `🖤 取消收藏\n❤️ 他人收藏\n\n✅ 已取关【${word}】`,
-            );
+            sleepToast(`🖤 取消收藏\n❤️ 他人收藏\n\n✅ 已取关【${word}】`);
         } else {
             // 检查是否输入的是作者名称
             let foundUserId: string | null = null;
@@ -839,11 +799,9 @@ export function likeAuthorsDelete() {
                 let user = getAjaxJson(urlUserDetailed(foundUserId)).body;
                 likeAuthors.delete(foundUserId);
                 word = `@${user.name} ${user.userId}`;
-                sleepToastWithDefault(
-                    `🖤 取消收藏\n❤️ 他人收藏\n\n✅ 已取关【${word}】`,
-                );
+                sleepToast(`🖤 取消收藏\n❤️ 他人收藏\n\n✅ 已取关【${word}】`);
             } else {
-                sleepToastWithDefault(
+                sleepToast(
                     `🖤 取消收藏\n❤️ 他人收藏\n\n⚠️ 未找到匹配的用户ID或作者名称`,
                 );
             }
@@ -865,14 +823,14 @@ export function startBrowser(url: string, title: string) {
         else msg += "⭐️ 收藏项目";
         msg += "\n\n即将打开 Github\n请确认已开启代理/梯子/VPN等";
     }
-    sleepToastWithDefault(msg, 0.01);
+    sleepToast(msg, 0.01);
     java.startBrowser(`${url}, ${headers}`, title);
 }
 
 export function shareFactory(type: string) {
     const novel = getNovel();
     if (novel === undefined || novel === null)
-        return sleepToastWithDefault("⚠️ 请在小说阅读页面，使用本功能");
+        return sleepToast("⚠️ 请在小说阅读页面，使用本功能");
     if (type.includes("author")) {
         startBrowser(urlUserUrl(novel.userId), novel.userName);
     } else if (type.includes("novel") || !novel.seriesId) {
@@ -907,11 +865,11 @@ export function charpterReading() {
     // let novel = source.getLoginInfoMap()
     let msg = `📌 当前章节\n\n${checkStatus(novel.isWatched)} 系列：${novel.seriesTitle}\n${checkStatus(novel.isBookmark)} 章节：${novel.title}\n👤 作者：${novel.userName}\n\n如非当前章节，请刷新正文`;
     msg = msg.replace("🖤 系列：\n", "");
-    sleepToastWithDefault(msg, 2);
+    sleepToast(msg, 2);
 }
 
 export function readMeLogin() {
-    return sleepToastWithDefault(
+    return sleepToast(
         `🅿️ 登录界面功能\n
     使用收藏、追更、关注作者、评论等功能时，需要登录
     使用前请先刷新正文，获取当前章节信息\n
@@ -921,7 +879,7 @@ export function readMeLogin() {
 }
 
 export function readMeSearch() {
-    return sleepToastWithDefault(
+    return sleepToast(
         `🔍 搜索说明\n
     标签之间需要以【空格】间隔
     ➖ 排除标签：#标签1 -标签2
@@ -961,9 +919,9 @@ export function readMeSearch() {
 //     hideAiWorks: hideAiWorks,
 //   });
 
-//   if (resp.error === true) sleepToastWithDefault(`⚠️ 隐藏AI作品 失败`, 1);
-//   else if (hideAiWorks === 1) sleepToastWithDefault(`⚠️ 隐藏AI作品\n\n✅ 已 隐藏AI作品`);
-//   else sleepToastWithDefault(`⚠️ 隐藏AI作品\n\n✅ 已取消 隐藏AI作品`);
+//   if (resp.error === true) sleepToast(`⚠️ 隐藏AI作品 失败`, 1);
+//   else if (hideAiWorks === 1) sleepToast(`⚠️ 隐藏AI作品\n\n✅ 已 隐藏AI作品`);
+//   else sleepToast(`⚠️ 隐藏AI作品\n\n✅ 已取消 隐藏AI作品`);
 //   settings.HIDE_AI_WORKS = Boolean(hideAiWorks);
 //   putInCache("pixivSettings", settings);
 // }
@@ -977,10 +935,10 @@ export function readMeSearch() {
 //     userXRestrict: userXRestrict,
 //   });
 
-//   if (resp.error === true) sleepToastWithDefault(`⚠️ 成人作品 失败`, 1);
-//   else if (userXRestrict === 0) sleepToastWithDefault(`⚠️ 成人作品\n\n✅ 已关闭 成人作品`);
-//   else if (userXRestrict === 1) sleepToastWithDefault(`⚠️ 成人作品\n\n✅ 已开启 R-18作品`);
-//   else sleepToastWithDefault(`⚠️ 成人作品\n\n✅ 已开启 R-18G作品`);
+//   if (resp.error === true) sleepToast(`⚠️ 成人作品 失败`, 1);
+//   else if (userXRestrict === 0) sleepToast(`⚠️ 成人作品\n\n✅ 已关闭 成人作品`);
+//   else if (userXRestrict === 1) sleepToast(`⚠️ 成人作品\n\n✅ 已开启 R-18作品`);
+//   else sleepToast(`⚠️ 成人作品\n\n✅ 已开启 R-18G作品`);
 //   settings.USER_X_RESTRICT = userXRestrict;
 //   putInCache("pixivSettings", settings);
 // }
@@ -993,10 +951,10 @@ export function readMeSearch() {
 //     sensitiveViewSetting: sensitiveView,
 //   });
 
-//   if (resp.error === true) sleepToastWithDefault(`⚠️ 敏感作品 失败`, 1);
+//   if (resp.error === true) sleepToast(`⚠️ 敏感作品 失败`, 1);
 //   else if (sensitiveView === 0) {
-//     sleepToastWithDefault(`⚠️ 敏感作品\n\n✅ 已隐藏 敏感作品`);
-//   } else sleepToastWithDefault(`⚠️ 敏感作品\n\n✅ 已显示 敏感作品`);
+//     sleepToast(`⚠️ 敏感作品\n\n✅ 已隐藏 敏感作品`);
+//   } else sleepToast(`⚠️ 敏感作品\n\n✅ 已显示 敏感作品`);
 //   settings.SENSITIVE_VIEW = sensitiveView;
 //   putInCache("pixivSettings", settings);
 // }
@@ -1023,7 +981,7 @@ export function getSettingStatus(mode = ""): string {
 }
 
 export function showSettings() {
-    sleepToastWithDefault(`⚙️ 当前设置\n\n${getSettingStatus()}`);
+    sleepToast(`⚙️ 当前设置\n\n${getSettingStatus()}`);
 }
 
 // TODO
@@ -1061,27 +1019,20 @@ export function editSettings<K extends keyof Settings>(settingsKey: K) {
             msg = `已恢复原有设置\n\n${statusMsg(status)}　${SETTINGS_NAME[settingsKey]}\n${message}`;
         }
     }
-    sleepToastWithDefault(msg);
+    sleepToast(msg);
     cache.put("pixivSettings", JSON.stringify(settings));
 }
 
 export function cleanCache() {
     const novel = getNovel();
     if (!novel) {
-        return sleepToastWithDefault("⚠️ 无法获取小说信息");
+        return sleepToast("⚠️ 无法获取小说信息");
     }
 
     cache.delete(`${urlNovelUrl(novel["id"]!)}`);
     cache.delete(`${urlNovelDetailed(novel["id"]!)}`);
     cache.delete(`${urlSearchNovel(novel["title"]!, 1)}`);
-    sleepToastWithDefault(
-        `🧹 清除缓存\n\n已清除本章正文缓存，刷新正文以更新`,
-        5,
-    );
-}
-
-export function sleepToastWithDefault(text: string, second: number = 0) {
-    sleepToastWithDefault(text, second);
+    sleepToast(`🧹 清除缓存\n\n已清除本章正文缓存，刷新正文以更新`, 5);
 }
 
 export function showMaxPages() {
@@ -1099,7 +1050,7 @@ export function showMaxPages() {
             break;
     }
     putInCache("maxPagesKey", key);
-    return sleepToastWithDefault(
+    return sleepToast(
         `📄 搜索页码\n设置 #️⃣ 搜索标签的最大页码数\n
     当前系列最大页码：${getFromCache(MaxPageConfigKey.SERIES_MAX_PAGES)}\n当前单篇最大页码：${getFromCache(MaxPageConfigKey.NOVELS_MAX_PAGES)}\n
     点击 ⏫ 增加页码/ ⏬ 减少页码\n调整【${MAX_PAGE_CONFIG_NAME[key]}】\n
@@ -1130,7 +1081,7 @@ export function editMaxPages(method: string) {
         msg += "⚠️ 搜索页码不能再增大了\n";
     }
     putInCache(`${key}`, maxPages);
-    sleepToastWithDefault(
+    sleepToast(
         `📄 搜索页码\n\n当前搜索【${MAX_PAGE_CONFIG_NAME[key]}】：${maxPages}\n\n${msg}`.trim(),
     );
     return maxPages;
